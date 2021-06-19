@@ -23,7 +23,7 @@ Metadata:
           - BastionInstanceType
           - ChainlinkNodeInstanceType
           - ChainlinkNodeRootVolumeSize
-          - SSHPort
+          # - SSHPort
       - Label:
           default: Linux bastion configuration
         Parameters:
@@ -84,14 +84,12 @@ Metadata:
         default: SSH Key pair name
       BastionAMIOS:
         default: Bastion AMI operating system
-      BastionInstanceType:
-        default: Bastion instance type
       ChainlinkNodeInstanceType:
         default: Chainlink node instance type
       ChainlinkNodeRootVolumeSize:
         default: Chainlink Node root volume size
-      SSHPort:
-        default: SSH Port for instances
+      # SSHPort:
+      #   default: SSH Port for instances
 
       # linux bastion config labels
       NumBastionHosts:
@@ -248,10 +246,10 @@ Parameters:
     Description: The size in GB for the root EBS volume for Chainlink Nodes.
     Type: Number
     Default: '30'
-  SSHPort:
-    Default: 6789
-    Description: "The SSH port the instance will listen for connections on."
-    Type: Number
+  # SSHPort:
+  #   Default: 6789
+  #   Description: "The SSH port the instance will listen for connections on."
+  #   Type: Number
   ImageId:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
