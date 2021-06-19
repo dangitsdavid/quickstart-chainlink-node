@@ -19,9 +19,21 @@ Metadata:
           default: Amazon EC2 configuration
         Parameters:
           - KeyPairName
+          - BastionAMIOS
+          - BastionInstanceType
           - ChainlinkNodeInstanceType
           - ChainlinkNodeRootVolumeSize
           - SSHPort
+      - Label:
+          default: Linux bastion configuration
+        Parameters:
+          - NumBastionHosts
+          - BastionHostName
+          - BastionTenancy
+          - EnableBanner
+          - BastionBanner
+          - EnableTCPForwarding
+          - EnableX11Forwarding
       - Label:
           default: Chainlink Node configuration
         Parameters:
@@ -70,12 +82,33 @@ Metadata:
       # amazon ec2 config labels
       KeyPairName:
         default: SSH Key pair name
+      BastionAMIOS:
+        default: Bastion AMI operating system
+      BastionInstanceType:
+        default: Bastion instance type
       ChainlinkNodeInstanceType:
         default: Chainlink node instance type
       ChainlinkNodeRootVolumeSize:
         default: Chainlink Node root volume size
       SSHPort:
         default: SSH Port for instances
+
+      # linux bastion config labels
+      NumBastionHosts:
+        default: Number of bastion hosts
+      BastionHostName:
+        default: Bastion host name
+      BastionTenancy:
+        default: Bastion tenancy
+      BastionBanner:
+        default: Banner text
+      EnableBanner:
+        default: Bastion banner
+      EnableTCPForwarding:
+        default: TCP forwarding
+      EnableX11Forwarding:
+        default: X11 forwarding
+
       # chainlink node configuration labels
       BlockchainNetwork:
         default: Blockchain Network
@@ -169,6 +202,38 @@ Parameters:
     Description: Name of an existing public/private key pair. If you do not have one in this AWS Region,
       please create it before continuing.
     Type: 'AWS::EC2::KeyPair::KeyName'
+  BastionAMIOS:
+    AllowedValues:
+      - Amazon-Linux2-HVM
+      - CentOS-7-HVM
+      - Ubuntu-Server-20.04-LTS-HVM
+      - SUSE-SLES-15-HVM
+    Default: Amazon-Linux2-HVM
+    Description: The Linux distribution for the AMI to be used for the bastion instances.
+    Type: String
+  BastionInstanceType:
+    Description: Amazon EC2 instance type for the bastion instances.
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.nano
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - t3.micro
+      - t3.small
+      - t3.medium
+      - t3.large
+      - t3.xlarge
+      - t3.2xlarge
+      - m3.large
+      - m3.xlarge
+      - m3.2xlarge
+      - m4.large
+      - m4.xlarge
+      - m4.2xlarge
+      - m4.4xlarge
   ChainlinkNodeInstanceType:
     AllowedValues:
       - t3.small
@@ -190,6 +255,51 @@ Parameters:
   ImageId:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+  # bastion host config
+  NumBastionHosts:
+    AllowedValues:
+      - '1'
+      - '2'
+    Default: '1'
+    Description: The number of bastion hosts to create. The maximum number is two.
+    Type: String
+  BastionHostName:
+    Default: 'LinuxBastion'
+    Description: The value used for the name tag of the bastion host.
+    Type: String
+  BastionTenancy:
+    Description: Bastion VPC tenancy (dedicated or default).
+    Type: String
+    Default: default
+    AllowedValues:
+      - dedicated
+      - default
+  EnableBanner:
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Default: 'false'
+    Description: Choose *true* to display a banner when connecting via SSH to the bastion.
+    Type: String
+  BastionBanner:
+    Default: ""
+    Description: Banner text to display upon login.
+    Type: String
+  EnableTCPForwarding:
+    Type: String
+    Description: To enable TCP forwarding, choose *true*.
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
+  EnableX11Forwarding:
+    Type: String
+    Description: To enable X11 forwarding, choose *true*.
+    Default: 'false'
+    AllowedValues:
+      - 'true'
+      - 'false'
 
   # blockchain config
   BlockchainNetwork:
@@ -331,6 +441,7 @@ Conditions:
     - 'aws-quickstart'
 
 Resources:
+  # vpc-stack
   VPCStack:
     Type: 'AWS::CloudFormation::Stack'
     Properties:
@@ -356,6 +467,45 @@ Resources:
         VPCCIDR: !Ref VPCCIDR
         VPCTenancy: !Ref VPCTenancy
 
+  # bastion-stack
+  BastionStack:
+    Type: 'AWS::CloudFormation::Stack'
+    Properties:
+      TemplateURL: !Sub
+        - https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/linux-bastion.template
+        - S3Bucket: !If
+            - UsingDefaultBucket
+            - !Sub 'aws-quickstart-${AWS::Region}'
+            - !Ref 'QSS3BucketName'
+          S3Region: !If
+            - UsingDefaultBucket
+            - !Ref 'AWS::Region'
+            - !Ref 'QSS3BucketRegion'
+      Parameters:
+        BastionAMIOS: !Ref BastionAMIOS
+        BastionHostName: !Ref BastionHostName
+        BastionBanner: !Ref BastionBanner
+        BastionInstanceType: !Ref BastionInstanceType
+        BastionTenancy: !Ref BastionTenancy
+        EnableBanner: !Ref EnableBanner
+        EnableTCPForwarding: !Ref EnableTCPForwarding
+        EnableX11Forwarding: !Ref EnableX11Forwarding
+        KeyPairName: !Ref KeyPairName
+        NumBastionHosts: !Ref NumBastionHosts
+        PublicSubnet1ID: !GetAtt 
+          - VPCStack
+          - Outputs.PublicSubnet1ID
+        PublicSubnet2ID: !GetAtt 
+          - VPCStack
+          - Outputs.PublicSubnet2ID
+        QSS3BucketRegion: !Ref QSS3BucketRegion
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+        RemoteAccessCIDR: !Ref RemoteAccessCIDR
+        VPCID: !GetAtt 
+          - VPCStack
+          - Outputs.VPCID
+
   # security groups
   ChainlinkNodeSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
@@ -373,22 +523,22 @@ Resources:
           FromPort: 6688
           ToPort: 6688
           CidrIp: !GetAtt VPCStack.Outputs.VPCCIDR
-  BastionSecurityGroup:
-    Type: 'AWS::EC2::SecurityGroup'
-    Properties:
-      GroupDescription: Enables SSH Access to Bastion Nodes
-      VpcId: !GetAtt 
-        - VPCStack
-        - Outputs.VPCID
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: !Ref SSHPort
-          ToPort: !Ref SSHPort
-          CidrIp: !Ref RemoteAccessCIDR
-        - IpProtocol: tcp
-          FromPort: 6688
-          ToPort: 6688
-          CidrIp: 0.0.0.0/0
+  # BastionSecurityGroup:
+  #   Type: 'AWS::EC2::SecurityGroup'
+  #   Properties:
+  #     GroupDescription: Enables SSH Access to Bastion Nodes
+  #     VpcId: !GetAtt 
+  #       - VPCStack
+  #       - Outputs.VPCID
+  #     SecurityGroupIngress:
+  #       - IpProtocol: tcp
+  #         FromPort: !Ref SSHPort
+  #         ToPort: !Ref SSHPort
+  #         CidrIp: !Ref RemoteAccessCIDR
+  #       - IpProtocol: tcp
+  #         FromPort: 6688
+  #         ToPort: 6688
+  #         CidrIp: 0.0.0.0/0
   RDSSecurityGroup:
     Type: "AWS::EC2::SecurityGroup"
     Properties: 
@@ -428,24 +578,24 @@ Resources:
     UpdatePolicy:
       AutoScalingReplacingUpdate:
         WillReplace: true
-  BastionAutoScalingGroup:
-    Type: 'AWS::AutoScaling::AutoScalingGroup'
-    Properties:
-      LaunchConfigurationName: !Ref BastionLaunchConfiguration
-      VPCZoneIdentifier:
-        - !GetAtt VPCStack.Outputs.PublicSubnet1ID
-        - !GetAtt VPCStack.Outputs.PublicSubnet2ID
-      MinSize: '1'
-      MaxSize: '2'
-      Cooldown: '300'
-      DesiredCapacity: '1'
-      Tags:
-        - Key: Name
-          Value: !Sub 'BastionHost-${AWS::Partition}'
-          PropagateAtLaunch: true
-    UpdatePolicy:
-      AutoScalingReplacingUpdate:
-        WillReplace: true
+  # BastionAutoScalingGroup:
+  #   Type: 'AWS::AutoScaling::AutoScalingGroup'
+  #   Properties:
+  #     LaunchConfigurationName: !Ref BastionLaunchConfiguration
+  #     VPCZoneIdentifier:
+  #       - !GetAtt VPCStack.Outputs.PublicSubnet1ID
+  #       - !GetAtt VPCStack.Outputs.PublicSubnet2ID
+  #     MinSize: '1'
+  #     MaxSize: '2'
+  #     Cooldown: '300'
+  #     DesiredCapacity: '1'
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Sub 'BastionHost-${AWS::Partition}'
+  #         PropagateAtLaunch: true
+  #   UpdatePolicy:
+  #     AutoScalingReplacingUpdate:
+  #       WillReplace: true
 
   # launch configurations for ASGs
   ChainlinkNodeLaunchConfiguration:
@@ -503,31 +653,31 @@ Resources:
                 -p /chainlink/.password \
                 -a /chainlink/.api
             - dbhostname: !GetAtt DBInstance.Endpoint.Address
-  BastionLaunchConfiguration:
-    Type: 'AWS::AutoScaling::LaunchConfiguration'
-    Properties:
-      AssociatePublicIpAddress: true
-      KeyName: !Ref KeyPairName
-      ImageId: !Ref ImageId
-      IamInstanceProfile: !Ref BastionInstanceProfile
-      SecurityGroups:
-        - !Ref BastionSecurityGroup
-      InstanceType: t3.micro
-      BlockDeviceMappings:
-        - DeviceName: /dev/xvda
-          Ebs:
-            VolumeSize: 10
-            VolumeType: gp2
-            DeleteOnTermination: true
-      UserData:
-        Fn::Base64: !Sub 
-        - |
-          #!/bin/bash
-          yum install -y wget jq awscli
-          sed -i /etc/ssh/sshd_config \
-            -e "s/#Port 22/Port ${SSHPort}/g"
-          systemctl restart sshd
-        - SSHPort: !Ref SSHPort
+  # BastionLaunchConfiguration:
+  #   Type: 'AWS::AutoScaling::LaunchConfiguration'
+  #   Properties:
+  #     AssociatePublicIpAddress: true
+  #     KeyName: !Ref KeyPairName
+  #     ImageId: !Ref ImageId
+  #     IamInstanceProfile: !Ref BastionInstanceProfile
+  #     SecurityGroups:
+  #       - !Ref BastionSecurityGroup
+  #     InstanceType: t3.micro
+  #     BlockDeviceMappings:
+  #       - DeviceName: /dev/xvda
+  #         Ebs:
+  #           VolumeSize: 10
+  #           VolumeType: gp2
+  #           DeleteOnTermination: true
+  #     UserData:
+  #       Fn::Base64: !Sub 
+  #       - |
+  #         #!/bin/bash
+  #         yum install -y wget jq awscli
+  #         sed -i /etc/ssh/sshd_config \
+  #           -e "s/#Port 22/Port ${SSHPort}/g"
+  #         systemctl restart sshd
+  #       - SSHPort: !Ref SSHPort
 
 # iam profiles and roles
   ChainlinkNodeInstanceProfile:
@@ -551,26 +701,26 @@ Resources:
       Path: /
       ManagedPolicyArns:
         - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
-  BastionInstanceProfile:
-    Type: AWS::IAM::InstanceProfile
-    Properties:
-      Path: /
-      Roles:
-        - !Ref BastionHostRole
-  BastionHostRole:
-    Type: 'AWS::IAM::Role'
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - !Sub 'ec2.${AWS::URLSuffix}'
-            Action:
-              - sts:AssumeRole
-      Path: /
-      ManagedPolicyArns:
-        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
+  # BastionInstanceProfile:
+  #   Type: AWS::IAM::InstanceProfile
+  #   Properties:
+  #     Path: /
+  #     Roles:
+  #       - !Ref BastionHostRole
+  # BastionHostRole:
+  #   Type: 'AWS::IAM::Role'
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service:
+  #               - !Sub 'ec2.${AWS::URLSuffix}'
+  #           Action:
+  #             - sts:AssumeRole
+  #     Path: /
+  #     ManagedPolicyArns:
+  #       - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
 
   # postgres sql db
   DBInstance:
