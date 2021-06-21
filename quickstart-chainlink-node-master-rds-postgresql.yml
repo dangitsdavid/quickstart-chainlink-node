@@ -2,21 +2,22 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Start Chainlink Node Quick Start
 Metadata:
   QuickStartDocumentation:
-    EntrypointName: 'Launch into an existing VPC'
-    Order: '2'
+    EntrypointName: "Launch into an existing VPC"
+    Order: "2"
   LICENSE: MIT License (MIT)
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
           default: Network configuration
         Parameters:
-          - PrivateSubnet1ID
-          - PrivateSubnet2ID
-          - PublicSubnet1ID
-          - PublicSubnet2ID
-          - RemoteAccessCIDR
+          - AvailabilityZones
           - VPCCIDR
-          - VPCID
+          - PrivateSubnet1CIDR
+          - PrivateSubnet2CIDR
+          - PublicSubnet1CIDR
+          - PublicSubnet2CIDR
+          - RemoteAccessCIDR
+          - VPCTenancy
       - Label:
           default: Amazon EC2 configuration
         Parameters:
@@ -25,6 +26,7 @@ Metadata:
           - BastionInstanceType
           - ChainlinkNodeInstanceType
           - ChainlinkNodeRootVolumeSize
+          # - SSHPort
       - Label:
           default: Linux bastion configuration
         Parameters:
@@ -44,12 +46,11 @@ Metadata:
           - EthereumNodeUrl
           - NodeWalletPassword
       - Label:
-          default: Aurora PostreSQL configuration
+          default: RDS PostreSQL configuration
         Parameters:
           - DBName
-          - DBAutoMinorVersionUpgrade
-          - DBBackupRetentionPeriod
           - DBMultiAZ
+          - DBStorageSize
           - DBEngineVersion
           - DBInstanceClass
           - DBMasterUsername
@@ -64,20 +65,22 @@ Metadata:
 
     ParameterLabels:
       # az config labels
-      PublicSubnet1ID:
-        default: Public Subnet 1 ID
-      PublicSubnet2ID:
-        default: Public Subnet 2 ID
-      PrivateSubnet1ID:
-        default: Private Subnet 1 ID
-      PrivateSubnet2ID:
-        default: Private Subnet 2 ID
-      RemoteAccessCIDR:
-        default: Allowed bastion external access CIDR
-      VPCID:
-        default: VPC ID
+      AvailabilityZones:
+        default: Availability Zones
       VPCCIDR:
         default: VPC CIDR
+      PublicSubnet1CIDR:
+        default: Public subnet 1 CIDR
+      PublicSubnet2CIDR:
+        default: Public subnet 2 CIDR
+      PrivateSubnet1CIDR:
+        default: Private subnet 1 CIDR
+      PrivateSubnet2CIDR:
+        default: Private subnet 2 CIDR
+      RemoteAccessCIDR:
+        default: Allowed bastion external access CIDR
+      VPCTenancy:
+        default: VPC tenancy
 
       # amazon ec2 config labels
       KeyPairName:
@@ -88,6 +91,8 @@ Metadata:
         default: Chainlink node instance type
       ChainlinkNodeRootVolumeSize:
         default: Chainlink Node root volume size
+      # SSHPort:
+      #   default: SSH Port for instances
 
       # linux bastion config labels
       NumBastionHosts:
@@ -120,12 +125,10 @@ Metadata:
       # db config labels
       DBName:
         default: Database name
-      DBAutoMinorVersionUpgrade:
-        default: Database auto minor version upgrade
-      DBBackupRetentionPeriod:
-        default: Database backup retention period
       DBMultiAZ:
         default: Database in Multi-AZ for high availability
+      DBStorageSize:
+        default: Database storage size
       DBEngineVersion:
         default: Database engine version
       DBInstanceClass:
@@ -144,38 +147,56 @@ Metadata:
         default: Quick Start S3 key prefix
       QSS3BucketRegion:
         default: Quick Start S3 bucket Region
- 
+
   cfn-lint: { config: { ignore_checks: [E9007] } }
 
 Parameters:
   # Availability Zone Configuration
-  PrivateSubnet1ID:
-    Description: ID of the private Subnet in Availability Zone 1
-    Type: AWS::EC2::Subnet::Id
-  PrivateSubnet2ID:
-    Description: ID of the private Subnet in Availability Zone 2
-    Type: AWS::EC2::Subnet::Id
-  PublicSubnet1ID:
-    Description: ID of the public Subnet in Availability Zone 1
-    Type: AWS::EC2::Subnet::Id
-  PublicSubnet2ID:
-    Description: ID of the public Subnet in Availability Zone 2
-    Type: AWS::EC2::Subnet::Id
-  RemoteAccessCIDR:
-    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/x
-    Description: Allowed CIDR block for external SSH access to the bastions
-    Default: 0.0.0.0/0
-    Type: String
+  AvailabilityZones:
+    Description: 'Select 2 Availability Zones to use for the subnets in the VPC.'
+    Type: List<AWS::EC2::AvailabilityZone::Name>
   VPCCIDR:
     AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
     ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
     Default: 10.0.0.0/16
-    Description: CIDR block for the VPC
+    Description: CIDR Block for the VPC.
     Type: String
-  VPCID:
-    Description: 'ID of the VPC (e.g., vpc-0343606e)'
-    Type: 'AWS::EC2::VPC::Id'
+  PublicSubnet1CIDR:
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+    Default: 10.0.128.0/20
+    Description: CIDR Block for the public DMZ subnet 1, located in Availability Zone 1.
+    Type: String
+  PublicSubnet2CIDR:
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+    Default: 10.0.144.0/20
+    Description: CIDR Block for the public DMZ subnet 2, located in Availability Zone 2.
+    Type: String
+  PrivateSubnet1CIDR:
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+    Default: 10.0.0.0/19
+    Description: CIDR block for private subnet 1, located in Availability Zone 1.
+    Type: String
+  PrivateSubnet2CIDR:
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+    Default: 10.0.32.0/19
+    Description: CIDR block for private subnet 2, located in Availability Zone 2.
+    Type: String
+  RemoteAccessCIDR:
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/x
+    Description: Allowed CIDR block for external SSH access to the bastions
+    Type: String
+  VPCTenancy:
+    AllowedValues:
+      - default
+      - dedicated
+    Default: default
+    Description: The allowed tenancy of instances launched into the VPC.
+    Type: String
 
   # Amazon EC2 Configuration
   KeyPairName:
@@ -228,6 +249,10 @@ Parameters:
     Description: The size in GB for the root EBS volume for Chainlink Nodes.
     Type: Number
     Default: '30'
+  # SSHPort:
+  #   Default: 6789
+  #   Description: "The SSH port the instance will listen for connections on."
+  #   Type: Number
   ImageId:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
@@ -324,24 +349,18 @@ Parameters:
     MinLength: "0"
     Default: 'PostgresDB'
     Type: String
-  DBAutoMinorVersionUpgrade: 
-    AllowedValues: 
-      - "true"
-      - "false"
-    Default: "false"
-    Description: "Select true to set up auto minor version upgrade."
-    Type: String
-  DBBackupRetentionPeriod: 
-    Default: "7"
-    Description: "The number of days for which automatic database snapshots are retained."
-    Type: String
   DBMultiAZ:
     AllowedValues:
-      - 'true'
-      - 'false'
-    Default: 'true'
-    Description: Specifies if the database instance is a multiple Availability Zone deployment.
+      - true
+      - false
+    Default: true
+    Description: 'Specifies if the database instance is deployed to multiple Availability Zones for HA.'
     Type: String
+  DBStorageSize:
+    Description: The size in GB for the Chainlink Node PostgreSQL database.
+    Type: Number
+    Default: '60'
+  # remove and leave a single default version OR latest 12, latest 11, latest 10
   DBEngineVersion:
     Description: Select Database Engine Version
     Type: String
@@ -352,8 +371,11 @@ Parameters:
       - 12.4
   DBInstanceClass:
     AllowedValues:
+      - db.t2.micro
+      - db.t3.small
+      - db.t3.medium
       - db.r5.large
-    Default: db.r5.large
+    Default: db.t3.small
     Description: "The compute and memory capacity class of the database instance."
     Type: String
   DBMasterUsername: 
@@ -396,7 +418,7 @@ Parameters:
     AllowedPattern: ^([0-9a-zA-Z-.]+/)*$
     ConstraintDescription: The Quick Start S3 key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), and forward slashes (/).
-    Default: quickstart-amazon-aurora-postgresql/
+    Default: quickstart-linux-bastion/
     Description: S3 key prefix that is used to simulate a directory for your copy of the 
       Quick Start assets. Keep the default prefix unless you are customizing 
       the template. Changing this prefix updates code references to point to 
@@ -420,12 +442,38 @@ Conditions:
     - 'aws-quickstart'
 
 Resources:
+  # vpc-stack
+  VPCStack:
+    Type: 'AWS::CloudFormation::Stack'
+    Properties:
+      TemplateURL: !Sub
+        - https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}submodules/quickstart-aws-vpc/templates/aws-vpc.template.yaml
+        - S3Bucket: !If
+            - UsingDefaultBucket
+            - !Sub 'aws-quickstart-${AWS::Region}'
+            - !Ref 'QSS3BucketName'
+          S3Region: !If
+            - UsingDefaultBucket
+            - !Ref 'AWS::Region'
+            - !Ref 'QSS3BucketRegion'
+      Parameters:
+        AvailabilityZones: !Join 
+          - ','
+          - !Ref AvailabilityZones
+        NumberOfAZs: '2'
+        PrivateSubnet1ACIDR: !Ref PrivateSubnet1CIDR
+        PrivateSubnet2ACIDR: !Ref PrivateSubnet2CIDR
+        PublicSubnet1CIDR: !Ref PublicSubnet1CIDR
+        PublicSubnet2CIDR: !Ref PublicSubnet2CIDR
+        VPCCIDR: !Ref VPCCIDR
+        VPCTenancy: !Ref VPCTenancy
+
   # bastion-stack
   BastionStack:
     Type: 'AWS::CloudFormation::Stack'
     Properties:
       TemplateURL: !Sub
-        - https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/quickstart-linux-bastion/templates/linux-bastion.template
+        - https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/linux-bastion.template
         - S3Bucket: !If
             - UsingDefaultBucket
             - !Sub 'aws-quickstart-${AWS::Region}'
@@ -445,44 +493,81 @@ Resources:
         EnableX11Forwarding: !Ref EnableX11Forwarding
         KeyPairName: !Ref KeyPairName
         NumBastionHosts: !Ref NumBastionHosts
-        PublicSubnet1ID: !Ref PublicSubnet1ID
-        PublicSubnet2ID: !Ref PublicSubnet2ID
+        PublicSubnet1ID: !GetAtt 
+          - VPCStack
+          - Outputs.PublicSubnet1ID
+        PublicSubnet2ID: !GetAtt 
+          - VPCStack
+          - Outputs.PublicSubnet2ID
         QSS3BucketRegion: !Ref QSS3BucketRegion
         QSS3BucketName: !Ref QSS3BucketName
-        QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}submodules/quickstart-linux-bastion/
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
         RemoteAccessCIDR: !Ref RemoteAccessCIDR
-        VPCID: !Ref VPCID
-  # aurora-stack
-  AuroraStack:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL:
-        !Sub
-          - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/quickstart-amazon-aurora-postgresql/templates/aurora_postgres.template.yaml'
-          - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
-            S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
-      Parameters:
-        DBName: !Ref DBName
-        DBAutoMinorVersionUpgrade: !Ref DBAutoMinorVersionUpgrade
-        DBBackupRetentionPeriod: !Ref DBBackupRetentionPeriod
-        DBEngineVersion: !Ref DBEngineVersion
-        DBInstanceClass: !Ref DBInstanceClass
-        DBMasterUsername: !Ref DBMasterUsername
-        DBMasterUserPassword: !Ref DBMasterUserPassword
-        DBPort: !Ref DBPort
-        DBMultiAZ: !Ref DBMultiAZ
-        Subnet1ID: !Ref PrivateSubnet1ID
-        Subnet2ID: !Ref PrivateSubnet2ID
-        VPCID: !Ref VPCID
+        VPCID: !GetAtt 
+          - VPCStack
+          - Outputs.VPCID
 
-  # chainlink-node-stack
+  # security groups
+  ChainlinkNodeSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enables SSH Access to Chainlink Nodes
+      VpcId: !GetAtt 
+        - VPCStack
+        - Outputs.VPCID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !GetAtt VPCStack.Outputs.VPCCIDR
+        - IpProtocol: tcp
+          FromPort: 6688
+          ToPort: 6688
+          CidrIp: !GetAtt VPCStack.Outputs.VPCCIDR
+  # BastionSecurityGroup:
+  #   Type: 'AWS::EC2::SecurityGroup'
+  #   Properties:
+  #     GroupDescription: Enables SSH Access to Bastion Nodes
+  #     VpcId: !GetAtt 
+  #       - VPCStack
+  #       - Outputs.VPCID
+  #     SecurityGroupIngress:
+  #       - IpProtocol: tcp
+  #         FromPort: !Ref SSHPort
+  #         ToPort: !Ref SSHPort
+  #         CidrIp: !Ref RemoteAccessCIDR
+  #       - IpProtocol: tcp
+  #         FromPort: 6688
+  #         ToPort: 6688
+  #         CidrIp: 0.0.0.0/0
+  RDSSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties: 
+      GroupDescription: "Allow access to database port"
+      VpcId: !GetAtt 
+        - VPCStack
+        - Outputs.VPCID
+      SecurityGroupIngress: 
+        - CidrIp: !Ref PrivateSubnet1CIDR
+          FromPort: !Ref DBPort
+          IpProtocol: tcp
+          ToPort: !Ref DBPort
+        - CidrIp: !Ref PrivateSubnet2CIDR
+          FromPort: !Ref DBPort
+          IpProtocol: tcp
+          ToPort: !Ref DBPort
+      Tags:
+        - Key: Name
+          Value: !Sub RDSSecurityGroup-${AWS::StackName}
+
+  # auto scaling groups
   ChainlinkNodeAutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
       LaunchConfigurationName: !Ref ChainlinkNodeLaunchConfiguration
       VPCZoneIdentifier:
-        - !Ref PrivateSubnet1ID
-        - !Ref PrivateSubnet2ID
+        - !GetAtt VPCStack.Outputs.PrivateSubnet1AID
+        - !GetAtt VPCStack.Outputs.PrivateSubnet2AID
       MinSize: '2'
       MaxSize: '2'
       Cooldown: '300'
@@ -494,6 +579,26 @@ Resources:
     UpdatePolicy:
       AutoScalingReplacingUpdate:
         WillReplace: true
+  # BastionAutoScalingGroup:
+  #   Type: 'AWS::AutoScaling::AutoScalingGroup'
+  #   Properties:
+  #     LaunchConfigurationName: !Ref BastionLaunchConfiguration
+  #     VPCZoneIdentifier:
+  #       - !GetAtt VPCStack.Outputs.PublicSubnet1ID
+  #       - !GetAtt VPCStack.Outputs.PublicSubnet2ID
+  #     MinSize: '1'
+  #     MaxSize: '2'
+  #     Cooldown: '300'
+  #     DesiredCapacity: '1'
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Sub 'BastionHost-${AWS::Partition}'
+  #         PropagateAtLaunch: true
+  #   UpdatePolicy:
+  #     AutoScalingReplacingUpdate:
+  #       WillReplace: true
+
+  # launch configurations for ASGs
   ChainlinkNodeLaunchConfiguration:
     Type: 'AWS::AutoScaling::LaunchConfiguration'
     Properties:
@@ -548,21 +653,34 @@ Resources:
                 --env-file=/home/ec2-user/.chainlink/.env smartcontract/chainlink:0.10.7 local n \
                 -p /chainlink/.password \
                 -a /chainlink/.api
-            - dbhostname: !GetAtt AuroraStack.Outputs.RDSEndPointAddress
-  ChainlinkNodeSecurityGroup:
-    Type: 'AWS::EC2::SecurityGroup'
-    Properties:
-      GroupDescription: Enables SSH Access to Chainlink Nodes
-      VpcId: !Ref VPCID
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: !Ref VPCCIDR
-        - IpProtocol: tcp
-          FromPort: 6688
-          ToPort: 6688
-          CidrIp: !Ref VPCCIDR
+            - dbhostname: !GetAtt DBInstance.Endpoint.Address
+  # BastionLaunchConfiguration:
+  #   Type: 'AWS::AutoScaling::LaunchConfiguration'
+  #   Properties:
+  #     AssociatePublicIpAddress: true
+  #     KeyName: !Ref KeyPairName
+  #     ImageId: !Ref ImageId
+  #     IamInstanceProfile: !Ref BastionInstanceProfile
+  #     SecurityGroups:
+  #       - !Ref BastionSecurityGroup
+  #     InstanceType: t3.micro
+  #     BlockDeviceMappings:
+  #       - DeviceName: /dev/xvda
+  #         Ebs:
+  #           VolumeSize: 10
+  #           VolumeType: gp2
+  #           DeleteOnTermination: true
+  #     UserData:
+  #       Fn::Base64: !Sub 
+  #       - |
+  #         #!/bin/bash
+  #         yum install -y wget jq awscli
+  #         sed -i /etc/ssh/sshd_config \
+  #           -e "s/#Port 22/Port ${SSHPort}/g"
+  #         systemctl restart sshd
+  #       - SSHPort: !Ref SSHPort
+
+# iam profiles and roles
   ChainlinkNodeInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
@@ -584,3 +702,50 @@ Resources:
       Path: /
       ManagedPolicyArns:
         - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
+  # BastionInstanceProfile:
+  #   Type: AWS::IAM::InstanceProfile
+  #   Properties:
+  #     Path: /
+  #     Roles:
+  #       - !Ref BastionHostRole
+  # BastionHostRole:
+  #   Type: 'AWS::IAM::Role'
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service:
+  #               - !Sub 'ec2.${AWS::URLSuffix}'
+  #           Action:
+  #             - sts:AssumeRole
+  #     Path: /
+  #     ManagedPolicyArns:
+  #       - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
+
+  # postgres sql db
+  DBInstance:
+    Properties:
+      AllocatedStorage: !Ref DBStorageSize
+      AllowMajorVersionUpgrade: false
+      AutoMinorVersionUpgrade: true
+      CopyTagsToSnapshot: true
+      DBInstanceClass: !Ref DBInstanceClass
+      DBName: !Ref DBName
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      Engine: postgres
+      EngineVersion: !Ref DBEngineVersion
+      MasterUsername: !Ref DBMasterUsername
+      MasterUserPassword: !Ref DBMasterUserPassword
+      MultiAZ: !Ref DBMultiAZ
+      StorageType: gp2
+      VPCSecurityGroups:
+      - !Ref RDSSecurityGroup
+    Type: 'AWS::RDS::DBInstance' 
+  DBSubnetGroup:
+    Properties: 
+      DBSubnetGroupDescription: Subnet for PostgreSQL DB
+      SubnetIds: 
+        - !GetAtt VPCStack.Outputs.PrivateSubnet1AID
+        - !GetAtt VPCStack.Outputs.PrivateSubnet2AID
+    Type: 'AWS::RDS::DBSubnetGroup'
