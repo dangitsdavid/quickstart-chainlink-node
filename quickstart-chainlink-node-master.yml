@@ -620,7 +620,7 @@ Resources:
               docker run -d \
                 --restart unless-stopped \
                 --name chainlink \
-                -p 6689:6689 \
+                -p 6688:6688 \
                 -v /home/ec2-user/.chainlink:/chainlink \
                 --env-file=/home/ec2-user/.chainlink/.env smartcontract/chainlink:0.10.7 local n \
                 -p /chainlink/.password \
