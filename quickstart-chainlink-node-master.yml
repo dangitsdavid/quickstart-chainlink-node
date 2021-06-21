@@ -18,6 +18,7 @@ Metadata:
           - PublicSubnet2CIDR
           - RemoteAccessCIDR
           - VPCTenancy
+          - SSLCertificate
       - Label:
           default: Amazon EC2 configuration
         Parameters:
@@ -197,6 +198,10 @@ Parameters:
       - dedicated
     Default: default
     Description: The allowed tenancy of instances launched into the VPC.
+    Type: String
+  SSLCertificate:
+    Description: "ARN for the Certificate"
+    Default: ""
     Type: String
 
   # Amazon EC2 Configuration
@@ -568,6 +573,8 @@ Resources:
         - Key: Name
           Value: !Sub 'ChainlinkNode-${AWS::Partition}'
           PropagateAtLaunch: true
+      TargetGroupARNs:
+        - !Ref ChainlinkNodeTargetGroup
     UpdatePolicy:
       AutoScalingReplacingUpdate:
         WillReplace: true
@@ -647,6 +654,76 @@ Resources:
       Path: /
       ManagedPolicyArns:
         - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
+
+  #SecurityGroup for ELB
+  ELBSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'Security Group to allow inbound https traffic and http to https redirected traffic'
+      VpcId: !GetAtt 
+        - VPCStack
+        - Outputs.VPCID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: !Ref RemoteAccessCIDR
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref RemoteAccessCIDR
+  #ELB for UI access
+  ChainlinkNodeELB:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Name: CLNodeELB
+      SecurityGroups: 
+        - !Ref ELBSecurityGroup
+      Subnets:  
+        - !GetAtt VPCStack.Outputs.PublicSubnet1ID
+        - !GetAtt VPCStack.Outputs.PublicSubnet2ID
+  ChainlinkNodeTargetGroup:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties:
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: 15
+      HealthCheckPath: "/"
+      HealthCheckProtocol: "HTTP"
+      Matcher:
+        HttpCode: '200'
+      Name: 'ChainlinkNodes'
+      Port: 6688
+      Protocol: "HTTP"
+      VpcId: !GetAtt 
+        - VPCStack
+        - Outputs.VPCID
+  HTTPListener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      DefaultActions:
+        - Type: "redirect"
+          RedirectConfig:
+            Protocol: "HTTPS"
+            Port: 443
+            Host: "#{host}"
+            Path: "/#{path}"
+            Query: "#{query}"
+            StatusCode: "HTTP_301"
+      LoadBalancerArn: !Ref ChainlinkNodeELB
+      Port: 80
+      Protocol: "HTTP"
+  HTTPSListener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      Certificates:
+        - !Ref SSLCertificate
+      DefaultActions:
+        - Type: 'forward'
+          TargetGroupArn: !Ref ChainlinkNodeTargetGroup
+      Port: 443
+      Protocol: "HTTPS"
+      SslPolicy: "ELBSecurityPolicy-2016-08"
+      LoadBalancerArn: !Ref ChainlinkNodeELB
 
   # old-bastion-host-manual-stack
 

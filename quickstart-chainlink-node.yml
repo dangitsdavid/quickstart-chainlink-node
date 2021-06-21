@@ -17,6 +17,7 @@ Metadata:
           - RemoteAccessCIDR
           - VPCCIDR
           - VPCID
+          - SSLCertificate
       - Label:
           default: Amazon EC2 configuration
         Parameters:
@@ -176,6 +177,10 @@ Parameters:
   VPCID:
     Description: 'ID of the VPC (e.g., vpc-0343606e)'
     Type: 'AWS::EC2::VPC::Id'
+  SSLCertificate:
+    Description: "ARN for the Certificate"
+    Default: ""
+    Type: String
 
   # Amazon EC2 Configuration
   KeyPairName:
@@ -494,6 +499,8 @@ Resources:
     UpdatePolicy:
       AutoScalingReplacingUpdate:
         WillReplace: true
+    TargetGroupARNs:
+      - !Ref ChainlinkNodeTargetGroup
   ChainlinkNodeLaunchConfiguration:
     Type: 'AWS::AutoScaling::LaunchConfiguration'
     Properties:
@@ -584,3 +591,70 @@ Resources:
       Path: /
       ManagedPolicyArns:
         - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
+
+  #SecurityGroup for ELB
+  ELBSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'Security Group to allow inbound https traffic and http to https redirected traffic'
+      VpcId: !Ref VPCID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+  #ELB for UI access
+  ChainlinkNodeELB:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Name: CLNodeELB
+      SecurityGroups: !Ref ELBSecurityGroup
+      Subnets:
+        - !Ref PublicSubnet1ID
+        - !Ref PublicSubnet2ID
+      SubnetMappings:
+        - !Ref PrivateSubnet1ID
+        - !Ref PrivateSubnet2ID
+  ChainlinkNodeTargetGroup:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties:
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: 15
+      HealthCheckPath: "/"
+      HealthCheckProtocol: "HTTP"
+      Matcher:
+        HttpCode: '200'
+      Name: 'ChainlinkNodes'
+      Port: 6688
+      Protocol: "HTTP"
+      VpcId: !Ref VPCID
+  HTTPListener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties:
+      DefaultActions:
+        - Type: "redirect"
+          RedirectConfig:
+            Protocol: "HTTPS"
+            Port: 443
+            Host: "#{host}"
+            Path: "/#{path}"
+            Query: "#{query}"
+            StatusCode: "HTTP_301"
+      LoadBalancerArn: !Ref ChainlinkNodeELB
+      Port: 80
+      Protocol: "HTTP"
+  HTTPSListener:
+    Type: 'AWS::ElasticLoadBalancingV2::Listener'
+      Certificates:
+        - !Ref SSLCertificate
+      DefaultAction:
+        - Type: 'forward'
+          TargetGroupArn: !Ref ChainlinkNodeTargetGroup
+      Port: 443
+      Protocol: "HTTPS"
+      SslPolicy: "ELBSecurityPolicy-2016-08"
+  #
