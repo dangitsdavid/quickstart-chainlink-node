@@ -189,7 +189,7 @@ Parameters:
   RemoteAccessCIDR:
     AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$
     ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/x
-    Description: Allowed CIDR block for external SSH access to the bastions
+    Description: Allowed CIDR block for external SSH access to the bastions and Chainlink node UI
     Default: 0.0.0.0/0
     Type: String
   VPCTenancy:
@@ -625,6 +625,8 @@ Resources:
               sudo bash test.sh
               cd /home/ec2-user/.chainlink
               docker run -d \
+                --log-driver=awslogs \
+                --log-opt awslogs-group=ChainlinkLogs \
                 --restart unless-stopped \
                 --name chainlink \
                 -p 6688:6688 \
@@ -654,6 +656,23 @@ Resources:
       Path: /
       ManagedPolicyArns:
         - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
+        - 'arn:aws:iam::aws:policy/CloudWatchLogsFullAccess'
+  # ChainlinkLogRole:
+  #   Type: 'AWS::IAM::Role'
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: 2012-10-17
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service:
+  #               - !Sub 'ec2.${AWS::URLSuffix}'
+  #           Action:
+  #             - sts:AssumeRole
+  #     Path: /
+  #     RoleName: ChainlinkLogs
+  #     ManagedPolicyArns:
+  #       - 'arn:aws:iam::aws:policy/CloudWatchLogsFullAccess'
 
   #SecurityGroup for ELB
   ELBSecurityGroup:
@@ -724,6 +743,15 @@ Resources:
       Protocol: "HTTPS"
       SslPolicy: "ELBSecurityPolicy-2016-08"
       LoadBalancerArn: !Ref ChainlinkNodeELB
+
+  #Docker Logs to Cloudwatch
+  ChainlinkLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: ChainlinkLogs
+      RetentionInDays: 7
+  
+      
 
   # old-bastion-host-manual-stack
 
