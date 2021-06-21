@@ -591,7 +591,6 @@ Resources:
       Path: /
       ManagedPolicyArns:
         - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
-
   #SecurityGroup for ELB
   ELBSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
@@ -657,4 +656,3 @@ Resources:
       Port: 443
       Protocol: "HTTPS"
       SslPolicy: "ELBSecurityPolicy-2016-08"
-  #
