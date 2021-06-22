@@ -546,7 +546,7 @@ Resources:
           Fn::GetAtt:
           - VPCStack
           - Outputs.VPCID
-  # chainlink-node-stack (We can replace this with)
+  # chainlink-node-stack (We can replace manual stack with this)
   # ChainlinkNodeStack:
   #   Type: AWS::CloudFormation::Stack
   #   Properties:

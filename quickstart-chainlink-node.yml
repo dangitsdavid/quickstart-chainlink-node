@@ -1,9 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Start Chainlink Node Quick Start
 Metadata:
-  QuickStartDocumentation:
-    EntrypointName: 'Launch into an existing VPC'
-    Order: '2'
   LICENSE: MIT License (MIT)
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -22,20 +19,8 @@ Metadata:
           default: Amazon EC2 configuration
         Parameters:
           - KeyPairName
-          - BastionAMIOS
-          - BastionInstanceType
           - ChainlinkNodeInstanceType
           - ChainlinkNodeRootVolumeSize
-      - Label:
-          default: Linux bastion configuration
-        Parameters:
-          - NumBastionHosts
-          - BastionHostName
-          - BastionTenancy
-          - EnableBanner
-          - BastionBanner
-          - EnableTCPForwarding
-          - EnableX11Forwarding
       - Label:
           default: Chainlink Node configuration
         Parameters:
@@ -48,11 +33,6 @@ Metadata:
           default: Aurora PostreSQL configuration
         Parameters:
           - DBName
-          - DBAutoMinorVersionUpgrade
-          - DBBackupRetentionPeriod
-          - DBMultiAZ
-          - DBEngineVersion
-          - DBInstanceClass
           - DBMasterUsername
           - DBMasterUserPassword
           - DBPort
@@ -85,28 +65,10 @@ Metadata:
       # amazon ec2 config labels
       KeyPairName:
         default: SSH Key pair name
-      BastionAMIOS:
-        default: Bastion AMI operating system
       ChainlinkNodeInstanceType:
         default: Chainlink node instance type
       ChainlinkNodeRootVolumeSize:
         default: Chainlink Node root volume size
-
-      # linux bastion config labels
-      NumBastionHosts:
-        default: Number of bastion hosts
-      BastionHostName:
-        default: Bastion host name
-      BastionTenancy:
-        default: Bastion tenancy
-      BastionBanner:
-        default: Banner text
-      EnableBanner:
-        default: Bastion banner
-      EnableTCPForwarding:
-        default: TCP forwarding
-      EnableX11Forwarding:
-        default: X11 forwarding
 
       # chainlink node configuration labels
       BlockchainNetwork:
@@ -123,16 +85,6 @@ Metadata:
       # db config labels
       DBName:
         default: Database name
-      DBAutoMinorVersionUpgrade:
-        default: Database auto minor version upgrade
-      DBBackupRetentionPeriod:
-        default: Database backup retention period
-      DBMultiAZ:
-        default: Database in Multi-AZ for high availability
-      DBEngineVersion:
-        default: Database engine version
-      DBInstanceClass:
-        default: Database instance class
       DBMasterUsername:
         default: Database master username
       DBMasterUserPassword:
@@ -189,38 +141,6 @@ Parameters:
     Description: Name of an existing public/private key pair. If you do not have one in this AWS Region,
       please create it before continuing.
     Type: 'AWS::EC2::KeyPair::KeyName'
-  BastionAMIOS:
-    AllowedValues:
-      - Amazon-Linux2-HVM
-      - CentOS-7-HVM
-      - Ubuntu-Server-20.04-LTS-HVM
-      - SUSE-SLES-15-HVM
-    Default: Amazon-Linux2-HVM
-    Description: The Linux distribution for the AMI to be used for the bastion instances.
-    Type: String
-  BastionInstanceType:
-    Description: Amazon EC2 instance type for the bastion instances.
-    Type: String
-    Default: t2.micro
-    AllowedValues:
-      - t2.nano
-      - t2.micro
-      - t2.small
-      - t2.medium
-      - t2.large
-      - t3.micro
-      - t3.small
-      - t3.medium
-      - t3.large
-      - t3.xlarge
-      - t3.2xlarge
-      - m3.large
-      - m3.xlarge
-      - m3.2xlarge
-      - m4.large
-      - m4.xlarge
-      - m4.2xlarge
-      - m4.4xlarge
   ChainlinkNodeInstanceType:
     AllowedValues:
       - t3.small
@@ -238,51 +158,6 @@ Parameters:
   ImageId:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
-
-  # bastion host config
-  NumBastionHosts:
-    AllowedValues:
-      - '1'
-      - '2'
-    Default: '1'
-    Description: The number of bastion hosts to create. The maximum number is two.
-    Type: String
-  BastionHostName:
-    Default: 'LinuxBastion'
-    Description: The value used for the name tag of the bastion host.
-    Type: String
-  BastionTenancy:
-    Description: Bastion VPC tenancy (dedicated or default).
-    Type: String
-    Default: default
-    AllowedValues:
-      - dedicated
-      - default
-  EnableBanner:
-    AllowedValues:
-      - 'true'
-      - 'false'
-    Default: 'false'
-    Description: Choose *true* to display a banner when connecting via SSH to the bastion.
-    Type: String
-  BastionBanner:
-    Default: ''
-    Description: Banner text to display upon login.
-    Type: String
-  EnableTCPForwarding:
-    Type: String
-    Description: To enable TCP forwarding, choose *true*.
-    Default: 'false'
-    AllowedValues:
-      - 'true'
-      - 'false'
-  EnableX11Forwarding:
-    Type: String
-    Description: To enable X11 forwarding, choose *true*.
-    Default: 'false'
-    AllowedValues:
-      - 'true'
-      - 'false'
 
   # blockchain config
   BlockchainNetwork:
@@ -330,38 +205,6 @@ Parameters:
     MinLength: '0'
     Default: 'PostgresDB'
     Type: String
-  DBAutoMinorVersionUpgrade: 
-    AllowedValues: 
-      - 'true'
-      - 'false'
-    Default: 'false'
-    Description: 'Select true to set up auto minor version upgrade.'
-    Type: String
-  DBBackupRetentionPeriod: 
-    Default: '7'
-    Description: 'The number of days for which automatic database snapshots are retained.'
-    Type: String
-  DBMultiAZ:
-    AllowedValues:
-      - 'true'
-      - 'false'
-    Default: 'true'
-    Description: Specifies if the database instance is a multiple Availability Zone deployment.
-    Type: String
-  DBEngineVersion:
-    Description: Select Database Engine Version
-    Type: String
-    Default: 11.9
-    AllowedValues:
-      - 10.14
-      - 11.9
-      - 12.4
-  DBInstanceClass:
-    AllowedValues:
-      - db.r5.large
-    Default: db.r5.large
-    Description: 'The compute and memory capacity class of the database instance.'
-    Type: String
   DBMasterUsername: 
     AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
     ConstraintDescription: 'Must begin with a letter and contain only alphanumeric characters.'
@@ -383,6 +226,8 @@ Parameters:
     ConstraintDescription: 'Must be in the range [1150-65535].'
     MinValue: 1150
     MaxValue: 65535
+  # dbhostname:
+  #   Type: string
 
   # qs config params
   QSS3BucketName:
@@ -426,111 +271,6 @@ Conditions:
     - 'aws-quickstart'
 
 Resources:
-  # bastion-stack
-  BastionStack:
-    Type: 'AWS::CloudFormation::Stack'
-    Properties:
-      TemplateURL: !Sub
-        - https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/quickstart-linux-bastion/templates/linux-bastion.template
-        - S3Bucket: !If
-            - UsingDefaultBucket
-            - !Sub 'aws-quickstart-${AWS::Region}'
-            - !Ref 'QSS3BucketName'
-          S3Region: !If
-            - UsingDefaultBucket
-            - !Ref 'AWS::Region'
-            - !Ref 'QSS3BucketRegion'
-      Parameters:
-        BastionAMIOS: !Ref BastionAMIOS
-        BastionHostName: !Ref BastionHostName
-        BastionBanner: !Ref BastionBanner
-        BastionInstanceType: !Ref BastionInstanceType
-        BastionTenancy: !Ref BastionTenancy
-        EnableBanner: !Ref EnableBanner
-        EnableTCPForwarding: !Ref EnableTCPForwarding
-        EnableX11Forwarding: !Ref EnableX11Forwarding
-        KeyPairName: !Ref KeyPairName
-        NumBastionHosts: !Ref NumBastionHosts
-        PublicSubnet1ID: !Ref PublicSubnet1ID
-        PublicSubnet2ID: !Ref PublicSubnet2ID
-        QSS3BucketRegion: !Ref QSS3BucketRegion
-        QSS3BucketName: !Ref QSS3BucketName
-        QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}submodules/quickstart-linux-bastion/
-        RemoteAccessCIDR: !Ref RemoteAccessCIDR
-        VPCID: !Ref VPCID
-  # aurora-stack
-  AuroraStack:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL:
-        !Sub
-          - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/quickstart-amazon-aurora-postgresql/templates/aurora_postgres.template.yaml'
-          - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
-            S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
-      Parameters:
-        DBName: !Ref DBName
-        DBAutoMinorVersionUpgrade: !Ref DBAutoMinorVersionUpgrade
-        DBBackupRetentionPeriod: !Ref DBBackupRetentionPeriod
-        DBEngineVersion: !Ref DBEngineVersion
-        DBInstanceClass: !Ref DBInstanceClass
-        DBMasterUsername: !Ref DBMasterUsername
-        DBMasterUserPassword: !Ref DBMasterUserPassword
-        DBPort: !Ref DBPort
-        DBMultiAZ: !Ref DBMultiAZ
-        Subnet1ID: !Ref PrivateSubnet1ID
-        Subnet2ID: !Ref PrivateSubnet2ID
-        VPCID: !Ref VPCID
-    # chainlink-node-stack (We can replace this with)
-  # ChainlinkNodeStack:
-  #   Type: AWS::CloudFormation::Stack
-  #   Properties:
-  #     TemplateURL:
-  #       !Sub
-  #         - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}/templates/quickstart-chainlink-node.yml'
-  #         - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
-  #           S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
-  #     Parameters:
-  #       RemoteAccessCIDR: !Ref RemoteAccessCIDR
-  #       PublicSubnet1:
-  #         Fn::GetAtt:
-  #         - VPCStack
-  #         - Outputs.PublicSubnet1ID
-  #       PublicSubnet2:
-  #         Fn::GetAtt:
-  #         - VPCStack
-  #         - Outputs.PublicSubnet2ID
-  #       PrivateSubnet1:
-  #         Fn::GetAtt:
-  #         - VPCStack
-  #         - Outputs.PrivateSubnet1AID
-  #       PrivateSubnet2:
-  #         Fn::GetAtt:
-  #         - VPCStack
-  #         - Outputs.PrivateSubnet2AID
-  #       VPCID:
-  #         Fn::GetAtt:
-  #         - VPCStack
-  #         - Outputs.VPCID
-  #       VPCCIDR:
-  #         Fn::GetAtt:
-  #         - VPCStack
-  #         - Outputs.VPCCIDR
-
-  #       KeyPairName: !Ref KeyPairName
-  #       ChainlinkNodeInstanceType: !Ref ChainlinkNodeInstanceType
-  #       ChainlinkNodeRootVolumeSize: !Ref ChainlinkNodeRootVolumeSize
-
-  #       BlockchainNetwork: !Ref BlockchainNetwork
-  #       ChainlinkNodeGUIEmail: !Ref ChainlinkNodeGUIEmail
-  #       ChainlinkNodeGUIPassword: !Ref ChainlinkNodeGUIPassword
-  #       EthereumNodeUrl: !Ref EthereumNodeUrl
-  #       NodeWalletPassword: !Ref NodeWalletPassword
-
-  #       DBMasterUsername: !Ref DBMasterUsername
-  #       DBMasterUserPassword: !Ref DBMasterUserPassword
-  #       DBPort: !Ref DBPort
-  #       dbhostname: !GetAtt AuroraStack.Outputs.RDSEndPointAddress
-
   ##############################
   # chainlink-node-manual-stack
   ##############################
@@ -570,6 +310,7 @@ Resources:
             VolumeSize: !Ref ChainlinkNodeRootVolumeSize
             VolumeType: gp2
             DeleteOnTermination: true
+      # change to cfn-init
       UserData:
         Fn::Base64: 
           !Sub 
@@ -608,6 +349,7 @@ Resources:
                 --env-file=/home/ec2-user/.chainlink/.env smartcontract/chainlink:0.10.7 local n \
                 -p /chainlink/.password \
                 -a /chainlink/.api
+            # we will need to change this up and have the parameters carry over via stack params from previous template
             - dbhostname: !GetAtt AuroraStack.Outputs.RDSEndPointAddress
   ChainlinkNodeSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
