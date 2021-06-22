@@ -272,57 +272,6 @@ Conditions:
     - 'aws-quickstart'
 
 Resources:
-    # chainlink-node-stack (We can replace this with)
-  # ChainlinkNodeStack:
-  #   Type: AWS::CloudFormation::Stack
-  #   Properties:
-  #     TemplateURL:
-  #       !Sub
-  #         - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}/templates/quickstart-chainlink-node.yml'
-  #         - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
-  #           S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
-  #     Parameters:
-  #       RemoteAccessCIDR: !Ref RemoteAccessCIDR
-  #       PublicSubnet1:
-  #         Fn::GetAtt:
-  #         - VPCStack
-  #         - Outputs.PublicSubnet1ID
-  #       PublicSubnet2:
-  #         Fn::GetAtt:
-  #         - VPCStack
-  #         - Outputs.PublicSubnet2ID
-  #       PrivateSubnet1:
-  #         Fn::GetAtt:
-  #         - VPCStack
-  #         - Outputs.PrivateSubnet1AID
-  #       PrivateSubnet2:
-  #         Fn::GetAtt:
-  #         - VPCStack
-  #         - Outputs.PrivateSubnet2AID
-  #       VPCID:
-  #         Fn::GetAtt:
-  #         - VPCStack
-  #         - Outputs.VPCID
-  #       VPCCIDR:
-  #         Fn::GetAtt:
-  #         - VPCStack
-  #         - Outputs.VPCCIDR
-
-  #       KeyPairName: !Ref KeyPairName
-  #       ChainlinkNodeInstanceType: !Ref ChainlinkNodeInstanceType
-  #       ChainlinkNodeRootVolumeSize: !Ref ChainlinkNodeRootVolumeSize
-
-  #       BlockchainNetwork: !Ref BlockchainNetwork
-  #       ChainlinkNodeGUIEmail: !Ref ChainlinkNodeGUIEmail
-  #       ChainlinkNodeGUIPassword: !Ref ChainlinkNodeGUIPassword
-  #       EthereumNodeUrl: !Ref EthereumNodeUrl
-  #       NodeWalletPassword: !Ref NodeWalletPassword
-
-  #       DBMasterUsername: !Ref DBMasterUsername
-  #       DBMasterUserPassword: !Ref DBMasterUserPassword
-  #       DBPort: !Ref DBPort
-  #       dbhostname: !GetAtt AuroraStack.Outputs.RDSEndPointAddress
-
   ##############################
   # chainlink-node-manual-stack
   ##############################
