@@ -65,7 +65,7 @@ Metadata:
           - QSS3BucketRegion
 
     ParameterLabels:
-      # az config labels
+      # network config labels
       AvailabilityZones:
         default: Availability Zones
       VPCCIDR:
@@ -82,6 +82,8 @@ Metadata:
         default: Allowed bastion external access CIDR
       VPCTenancy:
         default: VPC tenancy
+      SSLCertificate:
+        default: SSL certificate ARN
 
       # amazon ec2 config labels
       KeyPairName:
@@ -200,8 +202,8 @@ Parameters:
     Description: The allowed tenancy of instances launched into the VPC.
     Type: String
   SSLCertificate:
-    Description: "ARN for the Certificate"
-    Default: ""
+    Description: 'ARN for the Certificate'
+    Default: ''
     Type: String
 
   # Amazon EC2 Configuration
@@ -286,7 +288,7 @@ Parameters:
     Description: Choose *true* to display a banner when connecting via SSH to the bastion.
     Type: String
   BastionBanner:
-    Default: ""
+    Default: ''
     Description: Banner text to display upon login.
     Type: String
   EnableTCPForwarding:
@@ -315,51 +317,51 @@ Parameters:
       - BSC-Mainnet
       - Matic-Mainnet
     Default: Kovan-ETH-Testnet
-    Description: "Blockchain Network to run Chainlink Node."
+    Description: 'Blockchain Network to run Chainlink Node.'
     Type: String
   ChainlinkNodeGUIEmail:
     Default: chainlinkuser@email.com
-    Description: "The Chainlink Node GUI Email."
-    MaxLength: "64"
-    MinLength: "1"
+    Description: 'The Chainlink Node GUI Email.'
+    MaxLength: '64'
+    MinLength: '1'
     Type: String
   ChainlinkNodeGUIPassword:
-    Description: "The Chainlink Node GUI Password."
-    MaxLength: "64"
-    MinLength: "8"
-    NoEcho: "True"
+    Description: 'The Chainlink Node GUI Password.'
+    MaxLength: '64'
+    MinLength: '8'
+    NoEcho: 'True'
     Type: String
   EthereumNodeUrl:
     Default: 'wss://ethUrl'
-    Description: "Please provide websocket URL for an ETH node (i.e., Infura or Fiews)"
-    MaxLength: "64"
-    MinLength: "6"
+    Description: 'Please provide websocket endpoint for an ETH node'
+    MaxLength: '128'
+    MinLength: '6'
     Type: String
   NodeWalletPassword:
-    Description: "Node Wallet password must container 3 capital letters, 3 lowercase letters, 3 numbers, and 3 special characters."
-    MaxLength: "32"
-    MinLength: "9"
-    NoEcho: "True"
+    Description: 'Node Wallet password must container 3 capital letters, 3 lowercase letters, 3 numbers, and 3 special characters.'
+    MaxLength: '32'
+    MinLength: '9'
+    NoEcho: 'True'
     Type: String
 
   # PostreSQL DB Configuration
   DBName: 
-    AllowedPattern: "[a-zA-Z0-9]*"
-    Description: "Name of the Amazon Aurora database."
-    MaxLength: "64"
-    MinLength: "0"
+    AllowedPattern: '[a-zA-Z0-9]*'
+    Description: 'Name of the Amazon Aurora database.'
+    MaxLength: '64'
+    MinLength: '0'
     Default: 'PostgresDB'
     Type: String
   DBAutoMinorVersionUpgrade: 
     AllowedValues: 
-      - "true"
-      - "false"
-    Default: "false"
-    Description: "Select true to set up auto minor version upgrade."
+      - 'true'
+      - 'false'
+    Default: 'false'
+    Description: 'Select true to set up auto minor version upgrade.'
     Type: String
   DBBackupRetentionPeriod: 
-    Default: "7"
-    Description: "The number of days for which automatic database snapshots are retained."
+    Default: '7'
+    Description: 'The number of days for which automatic database snapshots are retained.'
     Type: String
   DBMultiAZ:
     AllowedValues:
@@ -378,27 +380,30 @@ Parameters:
       - 12.4
   DBInstanceClass:
     AllowedValues:
+      - db.t3.medium
+      - db.t3.large
       - db.r5.large
-    Default: db.r5.large
-    Description: "The compute and memory capacity class of the database instance."
+      - db.r6g.xlarge
+    Default: db.t3.medium
+    Description: 'The compute and memory capacity class of the database instance.'
     Type: String
   DBMasterUsername: 
-    AllowedPattern: "[a-zA-Z][a-zA-Z0-9]*"
-    ConstraintDescription: "Must begin with a letter and contain only alphanumeric characters."
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: 'Must begin with a letter and contain only alphanumeric characters.'
     Default: postgresadmin
-    Description: "The database admin account username."
-    MaxLength: "16"
-    MinLength: "1"
+    Description: 'The database admin account username.'
+    MaxLength: '16'
+    MinLength: '1'
     Type: String
   DBMasterUserPassword:
-    Description: "The database admin account password. Do not end the password with a special character, this wil cause issues connecting to database."
-    MaxLength: "64"
-    MinLength: "8"
-    NoEcho: "True"
+    Description: The database admin account password. Do not end the password with a special character, this wil cause issues connecting to database. Must contain at least 1 uppercase letter, 1 lowercase letter, and a symbol (non / @ " ' ).
+    MaxLength: '64'
+    MinLength: '8'
+    NoEcho: 'True'
     Type: String
   DBPort:
     Default: 5432
-    Description: "The port the instance will listen for connections on."
+    Description: 'The port the instance will listen for connections on.'
     Type: Number
     ConstraintDescription: 'Must be in the range [1150-65535].'
     MinValue: 1150
@@ -541,7 +546,61 @@ Resources:
           Fn::GetAtt:
           - VPCStack
           - Outputs.VPCID
-  # chainlink-node-stack
+  # chainlink-node-stack (We can replace this with)
+  # ChainlinkNodeStack:
+  #   Type: AWS::CloudFormation::Stack
+  #   Properties:
+  #     TemplateURL:
+  #       !Sub
+  #         - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}/templates/quickstart-chainlink-node.yml'
+  #         - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
+  #           S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+  #     Parameters:
+  #       RemoteAccessCIDR: !Ref RemoteAccessCIDR
+  #       PublicSubnet1:
+  #         Fn::GetAtt:
+  #         - VPCStack
+  #         - Outputs.PublicSubnet1ID
+  #       PublicSubnet2:
+  #         Fn::GetAtt:
+  #         - VPCStack
+  #         - Outputs.PublicSubnet2ID
+  #       PrivateSubnet1:
+  #         Fn::GetAtt:
+  #         - VPCStack
+  #         - Outputs.PrivateSubnet1AID
+  #       PrivateSubnet2:
+  #         Fn::GetAtt:
+  #         - VPCStack
+  #         - Outputs.PrivateSubnet2AID
+  #       VPCID:
+  #         Fn::GetAtt:
+  #         - VPCStack
+  #         - Outputs.VPCID
+  #       VPCCIDR:
+  #         Fn::GetAtt:
+  #         - VPCStack
+  #         - Outputs.VPCCIDR
+
+  #       KeyPairName: !Ref KeyPairName
+  #       ChainlinkNodeInstanceType: !Ref ChainlinkNodeInstanceType
+  #       ChainlinkNodeRootVolumeSize: !Ref ChainlinkNodeRootVolumeSize
+
+  #       BlockchainNetwork: !Ref BlockchainNetwork
+  #       ChainlinkNodeGUIEmail: !Ref ChainlinkNodeGUIEmail
+  #       ChainlinkNodeGUIPassword: !Ref ChainlinkNodeGUIPassword
+  #       EthereumNodeUrl: !Ref EthereumNodeUrl
+  #       NodeWalletPassword: !Ref NodeWalletPassword
+
+  #       DBMasterUsername: !Ref DBMasterUsername
+  #       DBMasterUserPassword: !Ref DBMasterUserPassword
+  #       DBPort: !Ref DBPort
+  #       dbhostname: !GetAtt AuroraStack.Outputs.RDSEndPointAddress
+
+
+  ##############################
+  # chainlink-node-manual-stack
+  ##############################
   ChainlinkNodeSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -607,7 +666,7 @@ Resources:
               echo 'chainNetwork=${BlockchainNetwork}' >> /etc/environment
               echo 'ethUrl=${EthereumNodeUrl}' >> /etc/environment
               echo 'psqlUser=${DBMasterUsername}' >> /etc/environment
-              echo 'psqlPwd=${DBMasterUserPassword}' >> /etc/environment
+              echo 'psqlPwd="${DBMasterUserPassword}"' >> /etc/environment
               echo 'psqlHostname=${dbhostname}' >> /etc/environment
               echo 'psqlPort=${DBPort}' >> /etc/environment
               echo 'psqlDb=${DBName}' >> /etc/environment
@@ -702,17 +761,17 @@ Resources:
         - !GetAtt VPCStack.Outputs.PublicSubnet1ID
         - !GetAtt VPCStack.Outputs.PublicSubnet2ID
   ChainlinkNodeTargetGroup:
-    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
     Properties:
       HealthCheckEnabled: true
       HealthCheckIntervalSeconds: 15
-      HealthCheckPath: "/"
-      HealthCheckProtocol: "HTTP"
+      HealthCheckPath: '/'
+      HealthCheckProtocol: 'HTTP'
       Matcher:
         HttpCode: '200'
       Name: 'ChainlinkNodes'
       Port: 6688
-      Protocol: "HTTP"
+      Protocol: 'HTTP'
       VpcId: !GetAtt 
         - VPCStack
         - Outputs.VPCID
@@ -720,29 +779,30 @@ Resources:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
       DefaultActions:
-        - Type: "redirect"
+        - Type: 'redirect'
           RedirectConfig:
-            Protocol: "HTTPS"
-            Port: 443
-            Host: "#{host}"
-            Path: "/#{path}"
-            Query: "#{query}"
-            StatusCode: "HTTP_301"
+            Protocol: 'HTTPS'
+            Port: '443'
+            Host: '#{host}'
+            Path: '/#{path}'
+            Query: '#{query}'
+            StatusCode: 'HTTP_301'
       LoadBalancerArn: !Ref ChainlinkNodeELB
       Port: 80
-      Protocol: "HTTP"
+      Protocol: 'HTTP'
+
   HTTPSListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
-      Certificates:
-        - !Ref SSLCertificate
+      LoadBalancerArn: !Ref ChainlinkNodeELB
+      Certificates: 
+        - CertificateArn: !Ref SSLCertificate
       DefaultActions:
         - Type: 'forward'
           TargetGroupArn: !Ref ChainlinkNodeTargetGroup
       Port: 443
-      Protocol: "HTTPS"
-      SslPolicy: "ELBSecurityPolicy-2016-08"
-      LoadBalancerArn: !Ref ChainlinkNodeELB
+      Protocol: 'HTTPS'
+      SslPolicy: 'ELBSecurityPolicy-2016-08'
 
   #Docker Logs to Cloudwatch
   ChainlinkLogGroup:
@@ -750,11 +810,11 @@ Resources:
     Properties:
       LogGroupName: ChainlinkLogs
       RetentionInDays: 7
-  
-      
 
-  # old-bastion-host-manual-stack
 
+  ##########################
+  # old-bastion-manual-stack
+  ##########################
   # BastionSecurityGroup:
   #   Type: 'AWS::EC2::SecurityGroup'
   #   Properties:
@@ -811,7 +871,7 @@ Resources:
   #         #!/bin/bash
   #         yum install -y wget jq awscli
   #         sed -i /etc/ssh/sshd_config \
-  #           -e "s/#Port 22/Port ${SSHPort}/g"
+  #           -e 's/#Port 22/Port ${SSHPort}/g'
   #         systemctl restart sshd
   #       - SSHPort: !Ref SSHPort
   # BastionInstanceProfile:
