@@ -713,7 +713,21 @@ Resources:
       Path: /
       ManagedPolicyArns:
         - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
-        - 'arn:aws:iam::aws:policy/CloudWatchLogsFullAccess'
+      Policies:
+        - PolicyName: LogsPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: '*'
+                Effect: Allow 
+                Action:
+                  - logs:CreateLogStream
+                  - logs:CreateLogGroup
+                  - logs:PutLogEvents
+                  - cloudwatch:PutMetricData
+                  - cloudwatch:GetMetricStatistics
+                  - cloudwatch:ListMetrics
+
   # ChainlinkLogRole:
   #   Type: 'AWS::IAM::Role'
   #   Properties:
