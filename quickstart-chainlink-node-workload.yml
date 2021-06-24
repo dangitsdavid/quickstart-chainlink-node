@@ -426,7 +426,9 @@ Conditions:
     - 'aws-quickstart'
 
 Resources:
-  # bastion-stack
+  ###############################
+  # bastion-stack (KEEP FOR PROD)
+  ###############################
   BastionStack:
     Type: 'AWS::CloudFormation::Stack'
     Properties:
@@ -458,7 +460,9 @@ Resources:
         QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}submodules/quickstart-linux-bastion/
         RemoteAccessCIDR: !Ref RemoteAccessCIDR
         VPCID: !Ref VPCID
-  # aurora-stack
+  #############################
+  # aurora-stack (KEEP FOR PROD
+  #############################
   AuroraStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -480,60 +484,41 @@ Resources:
         Subnet1ID: !Ref PrivateSubnet1ID
         Subnet2ID: !Ref PrivateSubnet2ID
         VPCID: !Ref VPCID
-    # chainlink-node-stack (We can replace this with)
+  ######################################
+  # chainlink-node-stack (KEEP FOR PROD)
+  ######################################
   # ChainlinkNodeStack:
   #   Type: AWS::CloudFormation::Stack
   #   Properties:
   #     TemplateURL:
   #       !Sub
-  #         - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}/templates/quickstart-chainlink-node-workload.yml'
+  #         - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}/templates/quickstart-chainlink-node.yml'
   #         - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
   #           S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
   #     Parameters:
   #       RemoteAccessCIDR: !Ref RemoteAccessCIDR
-  #       PublicSubnet1:
-  #         Fn::GetAtt:
-  #         - VPCStack
-  #         - Outputs.PublicSubnet1ID
-  #       PublicSubnet2:
-  #         Fn::GetAtt:
-  #         - VPCStack
-  #         - Outputs.PublicSubnet2ID
-  #       PrivateSubnet1:
-  #         Fn::GetAtt:
-  #         - VPCStack
-  #         - Outputs.PrivateSubnet1AID
-  #       PrivateSubnet2:
-  #         Fn::GetAtt:
-  #         - VPCStack
-  #         - Outputs.PrivateSubnet2AID
-  #       VPCID:
-  #         Fn::GetAtt:
-  #         - VPCStack
-  #         - Outputs.VPCID
-  #       VPCCIDR:
-  #         Fn::GetAtt:
-  #         - VPCStack
-  #         - Outputs.VPCCIDR
-
+  #       PublicSubnet1ID: !Ref PublicSubnet1ID
+  #       PublicSubnet2ID: !Ref PublicSubnet2ID
+  #       PrivateSubnet1ID: !Ref PrivateSubnet1ID
+  #       PrivateSubnet2ID: !Ref PrivateSubnet2ID
+  #       VPCID: !Ref VPCID
+  #       VPCCIDR: !Ref VPCCIDR
   #       KeyPairName: !Ref KeyPairName
   #       ChainlinkNodeInstanceType: !Ref ChainlinkNodeInstanceType
   #       ChainlinkNodeRootVolumeSize: !Ref ChainlinkNodeRootVolumeSize
-
   #       BlockchainNetwork: !Ref BlockchainNetwork
   #       ChainlinkNodeGUIEmail: !Ref ChainlinkNodeGUIEmail
   #       ChainlinkNodeGUIPassword: !Ref ChainlinkNodeGUIPassword
   #       EthereumNodeUrl: !Ref EthereumNodeUrl
   #       NodeWalletPassword: !Ref NodeWalletPassword
-
   #       DBMasterUsername: !Ref DBMasterUsername
   #       DBMasterUserPassword: !Ref DBMasterUserPassword
   #       DBPort: !Ref DBPort
-  #       dbhostname: !GetAtt AuroraStack.Outputs.RDSEndPointAddress
+  #       DBHostname: !GetAtt AuroraStack.Outputs.RDSEndPointAddress
 
-  ##############################
-  # chainlink-node-manual-stack
-  ##############################
+  ###############################################
+  # chainlink-node-manual-stack (REMOVE FOR PROD)
+  ###############################################
   ChainlinkNodeAutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
@@ -584,7 +569,7 @@ Resources:
               echo 'ethUrl=${EthereumNodeUrl}' >> /etc/environment
               echo 'psqlUser=${DBMasterUsername}' >> /etc/environment
               echo 'psqlPwd=${DBMasterUserPassword}' >> /etc/environment
-              echo 'psqlHostname=${dbhostname}' >> /etc/environment
+              echo 'psqlHostname=${DBHostname}' >> /etc/environment
               echo 'psqlPort=${DBPort}' >> /etc/environment
               echo 'psqlDb=${DBName}' >> /etc/environment
               echo 'apiUser=${ChainlinkNodeGUIEmail}' >> /etc/environment
@@ -592,10 +577,6 @@ Resources:
               echo 'walletPwd=${NodeWalletPassword}' >> /etc/environment
               mkdir /home/ec2-user/.chainlink
               mkdir /home/ec2-user/.chainlink/tls
-              openssl req -x509 -out  /home/ec2-user/.chainlink/tls/server.crt  -keyout /home/ec2-user/.chainlink/tls/server.key \
-                -newkey rsa:2048 -nodes -sha256 -days 365 \
-                -subj '/CN=localhost' -extensions EXT -config <( \
-                printf "[dn]\nCN=localhost\n[req]\ndistinguished_name = dn\n[EXT]\nsubjectAltName=DNS:localhost\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth")
               wget -O test.sh https://raw.githubusercontent.com/dangitsdavid/test/main/test.sh
               chmod +x test.sh
               sudo bash test.sh
@@ -608,7 +589,7 @@ Resources:
                 --env-file=/home/ec2-user/.chainlink/.env smartcontract/chainlink:0.10.7 local n \
                 -p /chainlink/.password \
                 -a /chainlink/.api
-            - dbhostname: !GetAtt AuroraStack.Outputs.RDSEndPointAddress
+            - DBHostname: !GetAtt AuroraStack.Outputs.RDSEndPointAddress
   ChainlinkNodeSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:

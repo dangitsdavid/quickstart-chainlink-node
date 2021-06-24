@@ -36,6 +36,7 @@ Metadata:
           - DBMasterUsername
           - DBMasterUserPassword
           - DBPort
+          - DBHostname
       - Label:
           default: AWS Quick Start configuration
         Parameters:
@@ -91,7 +92,8 @@ Metadata:
         default: Database master password
       DBPort:
         default: Database port
-
+      DBHostname:
+        Default: Database hostname
       # qs config labels
       QSS3BucketName:
         default: Quick Start S3 bucket name
@@ -226,8 +228,9 @@ Parameters:
     ConstraintDescription: 'Must be in the range [1150-65535].'
     MinValue: 1150
     MaxValue: 65535
-  # dbhostname:
-  #   Type: string
+  DBHostname:
+    Description: 'The Amazon Aurora PostgreSQL database hostname.'
+    Type: String
 
   # qs config params
   QSS3BucketName:
@@ -312,45 +315,44 @@ Resources:
             DeleteOnTermination: true
       # change to cfn-init
       UserData:
-        Fn::Base64: 
-          !Sub 
-            - |
-              #!/bin/bash
-              yum update -y
-              amazon-linux-extras install -y docker
-              systemctl start docker
-              usermod -a -G docker ec2-user
-              yum install -y wget jq awscli
-              echo 'chainNetwork=${BlockchainNetwork}' >> /etc/environment
-              echo 'ethUrl=${EthereumNodeUrl}' >> /etc/environment
-              echo 'psqlUser=${DBMasterUsername}' >> /etc/environment
-              echo 'psqlPwd=${DBMasterUserPassword}' >> /etc/environment
-              echo 'psqlHostname=${dbhostname}' >> /etc/environment
-              echo 'psqlPort=${DBPort}' >> /etc/environment
-              echo 'psqlDb=${DBName}' >> /etc/environment
-              echo 'apiUser=${ChainlinkNodeGUIEmail}' >> /etc/environment
-              echo 'apiPwd=${ChainlinkNodeGUIPassword}' >> /etc/environment
-              echo 'walletPwd=${NodeWalletPassword}' >> /etc/environment
-              mkdir /home/ec2-user/.chainlink
-              mkdir /home/ec2-user/.chainlink/tls
-              openssl req -x509 -out  /home/ec2-user/.chainlink/tls/server.crt  -keyout /home/ec2-user/.chainlink/tls/server.key \
-                -newkey rsa:2048 -nodes -sha256 -days 365 \
-                -subj '/CN=localhost' -extensions EXT -config <( \
-                printf "[dn]\nCN=localhost\n[req]\ndistinguished_name = dn\n[EXT]\nsubjectAltName=DNS:localhost\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth")
-              wget -O test.sh https://raw.githubusercontent.com/dangitsdavid/test/main/test.sh
-              chmod +x test.sh
-              sudo bash test.sh
-              cd /home/ec2-user/.chainlink
-              docker run -d \
-                --restart unless-stopped \
-                --name chainlink \
-                -p 6689:6689 \
-                -v /home/ec2-user/.chainlink:/chainlink \
-                --env-file=/home/ec2-user/.chainlink/.env smartcontract/chainlink:0.10.7 local n \
-                -p /chainlink/.password \
-                -a /chainlink/.api
-            # we will need to change this up and have the parameters carry over via stack params from previous template
-            - dbhostname: !GetAtt AuroraStack.Outputs.RDSEndPointAddress
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          amazon-linux-extras install -y docker
+          systemctl start docker
+          usermod -a -G docker ec2-user
+          yum install -y wget jq awscli
+          echo 'chainNetwork=${BlockchainNetwork}' >> /etc/environment
+          echo 'ethUrl=${EthereumNodeUrl}' >> /etc/environment
+          echo 'psqlUser=${DBMasterUsername}' >> /etc/environment
+          echo 'psqlPwd=${DBMasterUserPassword}' >> /etc/environment
+          echo 'psqlHostname=${DBHostname}' >> /etc/environment
+          echo 'psqlPort=${DBPort}' >> /etc/environment
+          echo 'psqlDb=${DBName}' >> /etc/environment
+          echo 'apiUser=${ChainlinkNodeGUIEmail}' >> /etc/environment
+          echo 'apiPwd=${ChainlinkNodeGUIPassword}' >> /etc/environment
+          echo 'walletPwd=${NodeWalletPassword}' >> /etc/environment
+          mkdir /home/ec2-user/.chainlink
+          mkdir /home/ec2-user/.chainlink/tls
+          openssl req -x509 -out  /home/ec2-user/.chainlink/tls/server.crt  -keyout /home/ec2-user/.chainlink/tls/server.key \
+            -newkey rsa:2048 -nodes -sha256 -days 365 \
+            -subj '/CN=localhost' -extensions EXT -config <( \
+            printf "[dn]\nCN=localhost\n[req]\ndistinguished_name = dn\n[EXT]\nsubjectAltName=DNS:localhost\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth")
+          wget -O test.sh https://raw.githubusercontent.com/dangitsdavid/test/main/test.sh
+          chmod +x test.sh
+          sudo bash test.sh
+          cd /home/ec2-user/.chainlink
+          docker run -d \
+            --restart unless-stopped \
+            --name chainlink \
+            -p 6689:6689 \
+            -v /home/ec2-user/.chainlink:/chainlink \
+            --env-file=/home/ec2-user/.chainlink/.env smartcontract/chainlink:0.10.7 local n \
+            -p /chainlink/.password \
+            -a /chainlink/.api
+                  
+
+          
   ChainlinkNodeSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:

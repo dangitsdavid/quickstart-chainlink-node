@@ -233,16 +233,8 @@ Parameters:
       - t3.micro
       - t3.small
       - t3.medium
-      - t3.large
-      - t3.xlarge
-      - t3.2xlarge
       - m3.large
       - m3.xlarge
-      - m3.2xlarge
-      - m4.large
-      - m4.xlarge
-      - m4.2xlarge
-      - m4.4xlarge
   ChainlinkNodeInstanceType:
     AllowedValues:
       - t3.small
@@ -451,7 +443,9 @@ Conditions:
     - 'aws-quickstart'
 
 Resources:
-  # vpc-stack
+  ###################################################
+  # vpc-stack (KEEP FOR PROD - main stack w/ new VPC)
+  ###################################################
   VPCStack:
     Type: 'AWS::CloudFormation::Stack'
     Properties:
@@ -476,7 +470,10 @@ Resources:
         PublicSubnet2CIDR: !Ref PublicSubnet2CIDR
         VPCCIDR: !Ref VPCCIDR
         VPCTenancy: !Ref VPCTenancy
-  # bastion-stack
+
+  #############################################################
+  # bastion-stack (REMOVE FOR PROD and place in workload stack)
+  #############################################################
   BastionStack:
     Type: 'AWS::CloudFormation::Stack'
     Properties:
@@ -514,7 +511,9 @@ Resources:
         VPCID: !GetAtt 
           - VPCStack
           - Outputs.VPCID
-  # aurora-stack
+  ############################################################
+  # aurora-stack (REMOVE FOR PROD and place in workload stack)
+  ############################################################
   AuroraStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -546,30 +545,32 @@ Resources:
           Fn::GetAtt:
           - VPCStack
           - Outputs.VPCID
-  # chainlink-node-stack (We can replace manual stack with this)
+  ######################################################################################
+  # chainlink-node-workload-stack (KEEP FOR PROD / carries parameters for Bastion/Aurora)
+  ######################################################################################
   # ChainlinkNodeStack:
   #   Type: AWS::CloudFormation::Stack
   #   Properties:
   #     TemplateURL:
   #       !Sub
-  #         - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}/templates/quickstart-chainlink-node.yml'
+  #         - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}/templates/quickstart-chainlink-node-workload.yml'
   #         - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
   #           S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
   #     Parameters:
   #       RemoteAccessCIDR: !Ref RemoteAccessCIDR
-  #       PublicSubnet1:
+  #       PublicSubnet1ID:
   #         Fn::GetAtt:
   #         - VPCStack
   #         - Outputs.PublicSubnet1ID
-  #       PublicSubnet2:
+  #       PublicSubnet2ID:
   #         Fn::GetAtt:
   #         - VPCStack
   #         - Outputs.PublicSubnet2ID
-  #       PrivateSubnet1:
+  #       PrivateSubnet1ID:
   #         Fn::GetAtt:
   #         - VPCStack
   #         - Outputs.PrivateSubnet1AID
-  #       PrivateSubnet2:
+  #       PrivateSubnet2ID:
   #         Fn::GetAtt:
   #         - VPCStack
   #         - Outputs.PrivateSubnet2AID
@@ -581,26 +582,27 @@ Resources:
   #         Fn::GetAtt:
   #         - VPCStack
   #         - Outputs.VPCCIDR
-
   #       KeyPairName: !Ref KeyPairName
   #       ChainlinkNodeInstanceType: !Ref ChainlinkNodeInstanceType
   #       ChainlinkNodeRootVolumeSize: !Ref ChainlinkNodeRootVolumeSize
-
   #       BlockchainNetwork: !Ref BlockchainNetwork
   #       ChainlinkNodeGUIEmail: !Ref ChainlinkNodeGUIEmail
   #       ChainlinkNodeGUIPassword: !Ref ChainlinkNodeGUIPassword
   #       EthereumNodeUrl: !Ref EthereumNodeUrl
   #       NodeWalletPassword: !Ref NodeWalletPassword
-
+  #       DBName: !Ref DBName
+  #       DBAutoMinorVersionUpgrade: !Ref DBAutoMinorVersionUpgrade
+  #       DBBackupRetentionPeriod: !Ref DBBackupRetentionPeriod
+  #       DBEngineVersion: !Ref DBEngineVersion
+  #       DBInstanceClass: !Ref DBInstanceClass
   #       DBMasterUsername: !Ref DBMasterUsername
   #       DBMasterUserPassword: !Ref DBMasterUserPassword
   #       DBPort: !Ref DBPort
-  #       dbhostname: !GetAtt AuroraStack.Outputs.RDSEndPointAddress
+  #       DBMultiAZ: !Ref DBMultiAZ
 
-
-  ##############################
-  # chainlink-node-manual-stack
-  ##############################
+  ###############################################
+  # chainlink-node-manual-stack (REMOVE FOR PROD)
+  ###############################################
   ChainlinkNodeSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -667,7 +669,7 @@ Resources:
               echo 'ethUrl=${EthereumNodeUrl}' >> /etc/environment
               echo 'psqlUser=${DBMasterUsername}' >> /etc/environment
               echo 'psqlPwd="${DBMasterUserPassword}"' >> /etc/environment
-              echo 'psqlHostname=${dbhostname}' >> /etc/environment
+              echo 'psqlHostname=${DBHostname}' >> /etc/environment
               echo 'psqlPort=${DBPort}' >> /etc/environment
               echo 'psqlDb=${DBName}' >> /etc/environment
               echo 'apiUser=${ChainlinkNodeGUIEmail}' >> /etc/environment
@@ -675,10 +677,6 @@ Resources:
               echo 'walletPwd=${NodeWalletPassword}' >> /etc/environment
               mkdir /home/ec2-user/.chainlink
               mkdir /home/ec2-user/.chainlink/tls
-              openssl req -x509 -out  /home/ec2-user/.chainlink/tls/server.crt  -keyout /home/ec2-user/.chainlink/tls/server.key \
-                -newkey rsa:2048 -nodes -sha256 -days 365 \
-                -subj '/CN=localhost' -extensions EXT -config <( \
-                printf "[dn]\nCN=localhost\n[req]\ndistinguished_name = dn\n[EXT]\nsubjectAltName=DNS:localhost\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth")
               wget -O test.sh https://raw.githubusercontent.com/dangitsdavid/test/main/test.sh
               chmod +x test.sh
               sudo bash test.sh
@@ -693,7 +691,7 @@ Resources:
                 --env-file=/home/ec2-user/.chainlink/.env smartcontract/chainlink:0.10.7 local n \
                 -p /chainlink/.password \
                 -a /chainlink/.api
-            - dbhostname: !GetAtt AuroraStack.Outputs.RDSEndPointAddress
+            - DBHostname: !GetAtt AuroraStack.Outputs.RDSEndPointAddress
   ChainlinkNodeInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
@@ -732,7 +730,6 @@ Resources:
   #     RoleName: ChainlinkLogs
   #     ManagedPolicyArns:
   #       - 'arn:aws:iam::aws:policy/CloudWatchLogsFullAccess'
-
   #SecurityGroup for ELB
   ELBSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
@@ -790,7 +787,6 @@ Resources:
       LoadBalancerArn: !Ref ChainlinkNodeELB
       Port: 80
       Protocol: 'HTTP'
-
   HTTPSListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
     Properties:
@@ -803,94 +799,9 @@ Resources:
       Port: 443
       Protocol: 'HTTPS'
       SslPolicy: 'ELBSecurityPolicy-2016-08'
-
   #Docker Logs to Cloudwatch
   ChainlinkLogGroup:
     Type: 'AWS::Logs::LogGroup'
     Properties:
       LogGroupName: ChainlinkLogs
       RetentionInDays: 7
-
-
-  ##########################
-  # old-bastion-manual-stack
-  ##########################
-  # BastionSecurityGroup:
-  #   Type: 'AWS::EC2::SecurityGroup'
-  #   Properties:
-  #     GroupDescription: Enables SSH Access to Bastion Nodes
-  #     VpcId: !GetAtt 
-  #       - VPCStack
-  #       - Outputs.VPCID
-  #     SecurityGroupIngress:
-  #       - IpProtocol: tcp
-  #         FromPort: !Ref SSHPort
-  #         ToPort: !Ref SSHPort
-  #         CidrIp: !Ref RemoteAccessCIDR
-  #       - IpProtocol: tcp
-  #         FromPort: 6688
-  #         ToPort: 6688
-  #         CidrIp: 0.0.0.0/0
-  # BastionAutoScalingGroup:
-  #   Type: 'AWS::AutoScaling::AutoScalingGroup'
-  #   Properties:
-  #     LaunchConfigurationName: !Ref BastionLaunchConfiguration
-  #     VPCZoneIdentifier:
-  #       - !GetAtt VPCStack.Outputs.PublicSubnet1ID
-  #       - !GetAtt VPCStack.Outputs.PublicSubnet2ID
-  #     MinSize: '1'
-  #     MaxSize: '2'
-  #     Cooldown: '300'
-  #     DesiredCapacity: '1'
-  #     Tags:
-  #       - Key: Name
-  #         Value: !Sub 'BastionHost-${AWS::Partition}'
-  #         PropagateAtLaunch: true
-  #   UpdatePolicy:
-  #     AutoScalingReplacingUpdate:
-  #       WillReplace: true
-  # BastionLaunchConfiguration:
-  #   Type: 'AWS::AutoScaling::LaunchConfiguration'
-  #   Properties:
-  #     AssociatePublicIpAddress: true
-  #     KeyName: !Ref KeyPairName
-  #     ImageId: !Ref ImageId
-  #     IamInstanceProfile: !Ref BastionInstanceProfile
-  #     SecurityGroups:
-  #       - !Ref BastionSecurityGroup
-  #     InstanceType: t3.micro
-  #     BlockDeviceMappings:
-  #       - DeviceName: /dev/xvda
-  #         Ebs:
-  #           VolumeSize: 10
-  #           VolumeType: gp2
-  #           DeleteOnTermination: true
-  #     UserData:
-  #       Fn::Base64: !Sub 
-  #       - |
-  #         #!/bin/bash
-  #         yum install -y wget jq awscli
-  #         sed -i /etc/ssh/sshd_config \
-  #           -e 's/#Port 22/Port ${SSHPort}/g'
-  #         systemctl restart sshd
-  #       - SSHPort: !Ref SSHPort
-  # BastionInstanceProfile:
-  #   Type: AWS::IAM::InstanceProfile
-  #   Properties:
-  #     Path: /
-  #     Roles:
-  #       - !Ref BastionHostRole
-  # BastionHostRole:
-  #   Type: 'AWS::IAM::Role'
-  #   Properties:
-  #     AssumeRolePolicyDocument:
-  #       Statement:
-  #         - Effect: Allow
-  #           Principal:
-  #             Service:
-  #               - !Sub 'ec2.${AWS::URLSuffix}'
-  #           Action:
-  #             - sts:AssumeRole
-  #     Path: /
-  #     ManagedPolicyArns:
-  #       - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
