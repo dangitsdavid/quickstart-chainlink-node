@@ -724,7 +724,7 @@ Resources:
                 Effect: Allow 
                 Action:
                   - logs:CreateLogStream
-                  - logs:CreatedLogGroup
+                  - logs:CreateLogGroup
                   - logs:PutLogEvents
                   - cloudwatch:PutMetricData
                   - cloudwatch:GetMetricStatistics
