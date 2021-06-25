@@ -675,6 +675,8 @@ Resources:
                     command: !Sub "echo 'walletPwd=${NodeWalletPassword}' >> /etc/environment"
                   11-create-chainlink-dir:
                     command: "mkdir /home/ec2-user/.chainlink"
+                  12-set-latest-image:
+                    command: "latestimage=$(curl -s -S "https://registry.hub.docker.com/v2/repositories/smartcontract/chainlink/tags/" | jq -r '."results"[]["name"]' | head -n 1"
               install-pkg:
                 packages:
                   yum:
@@ -717,7 +719,7 @@ Resources:
                         --name chainlink \
                         -p 6688:6688 \
                         -v /home/ec2-user/.chainlink:/chainlink \
-                        --env-file=/home/ec2-user/.chainlink/.env smartcontract/chainlink:0.10.7 local n \
+                        --env-file=/home/ec2-user/.chainlink/.env smartcontract/chainlink:$latestimage local n \
                         -p /chainlink/.password \
                         -a /chainlink/.api
     Properties:
