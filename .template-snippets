@@ -119,3 +119,42 @@
           cfn-init -v --stack ${AWS::StackName} --resource ChainlinkNodeLaunchConfiguration --configsets ec2_bootstrap --region ${AWS::Region} || cfn_fail
           # Signal cfn-init (final check)
           [ $(qs_status) == 0 ] && cfn_success || cfn_fail
+
+##### USER DATA OLD #######
+      UserData:
+        Fn::Base64: 
+          !Sub 
+            - |
+              #!/bin/bash
+              yum update -y
+              amazon-linux-extras install -y docker
+              systemctl start docker
+              usermod -a -G docker ec2-user
+              yum install -y wget jq awscli
+              echo 'chainNetwork=${BlockchainNetwork}' >> /etc/environment
+              echo 'ethUrl=${EthereumNodeUrl}' >> /etc/environment
+              echo 'psqlUser=${DBMasterUsername}' >> /etc/environment
+              echo 'psqlPwd="${DBMasterUserPassword}"' >> /etc/environment
+              echo 'psqlHostname=${DBHostname}' >> /etc/environment
+              echo 'psqlPort=${DBPort}' >> /etc/environment
+              echo 'psqlDb=${DBName}' >> /etc/environment
+              echo 'apiUser=${ChainlinkNodeGUIEmail}' >> /etc/environment
+              echo 'apiPwd=${ChainlinkNodeGUIPassword}' >> /etc/environment
+              echo 'walletPwd=${NodeWalletPassword}' >> /etc/environment
+              mkdir /home/ec2-user/.chainlink
+              mkdir /home/ec2-user/.chainlink/tls
+              wget -O test.sh https://raw.githubusercontent.com/dangitsdavid/test/main/test.sh
+              chmod +x test.sh
+              sudo bash test.sh
+              cd /home/ec2-user/.chainlink
+              docker run -d \
+                --log-driver=awslogs \
+                --log-opt awslogs-group=ChainlinkLogs \
+                --restart unless-stopped \
+                --name chainlink \
+                -p 6688:6688 \
+                -v /home/ec2-user/.chainlink:/chainlink \
+                --env-file=/home/ec2-user/.chainlink/.env smartcontract/chainlink:0.10.7 local n \
+                -p /chainlink/.password \
+                -a /chainlink/.api
+            - DBHostname: !GetAtt AuroraStack.Outputs.RDSEndPointAddress

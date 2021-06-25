@@ -541,6 +541,85 @@ Resources:
         WillReplace: true
   ChainlinkNodeLaunchConfiguration:
     Type: 'AWS::AutoScaling::LaunchConfiguration'
+    Metadata:
+          AWS::CloudFormation::Init:
+              configSets:
+                ec2_bootstrap:
+                  - common-init
+                  - install-pkg
+                  - create-env
+                  - install-docker
+              common-init:
+                commands:
+                  01-store-chainnetwork-var:
+                    command: !Sub "echo 'chainNetwork=${BlockchainNetwork}' >> /etc/environment"
+                  02-store-blockchainrpc-var:
+                    command: !Sub "echo 'ethUrl=${EthereumNodeUrl}' >> /etc/environment"
+                  03-store-dbuser-var:
+                    command: !Sub "echo 'psqlUser=${DBMasterUsername}' >> /etc/environment"
+                  04-store-dbpwd-var:
+                    command: !Sub "echo 'psqlPwd=${DBMasterUserPassword}' >> /etc/environment"
+                  05-store-dbhostname-var:
+                    command: !Sub 
+                      - "echo 'psqlHostname=${DBHostname}' >> /etc/environment"
+                      - DBHostname: !GetAtt AuroraStack.Outputs.RDSEndPointAddress
+                  06-store-dbport-var:
+                    command: !Sub "echo 'psqlPort=${DBPort}' >> /etc/environment"
+                  07-store-dbname-var:
+                    command: !Sub "echo 'psqlDb=${DBName}' >> /etc/environment"
+                  08-store-apiuser-var:
+                    command: !Sub "echo 'apiUser=${ChainlinkNodeGUIEmail}' >> /etc/environment"
+                  09-store-apipwd-var:
+                    command: !Sub "echo 'apiPwd=${ChainlinkNodeGUIPassword}' >> /etc/environment"
+                  10-store-walletpwd-var:
+                    command: !Sub "echo 'walletPwd=${NodeWalletPassword}' >> /etc/environment"
+                  11-create-chainlink-dir:
+                    command: "mkdir /home/ec2-user/.chainlink"
+              install-pkg:
+                packages:
+                  yum:
+                    jq: []
+                    awscli: []
+              create-env:
+                packages:
+                  yum:
+                    wget: []
+                commands:
+                  01-dl-script:
+                    command:
+                      wget -O test.sh https://raw.githubusercontent.com/dangitsdavid/test/main/test.sh
+                  02-script-permission:
+                    command:
+                      chmod +x test.sh
+                  03-create-env-file:
+                    command:
+                      sudo bash test.sh
+              install-docker:
+                packages:
+                  yum:
+                    docker: []
+                services:
+                  sysvinit:
+                    docker:
+                      enabled: "true"
+                      ensureRunning: "true"
+                commands:
+                  01-system-ctl-docker:
+                    command: systemctl start docker
+                  02-docker-for-ec2-user:
+                    command: gpasswd -a ec2-user docker
+                  03-run-chainlink-docker:
+                    command: |
+                      cd /home/ec2-user/.chainlink && docker run -d \
+                        --log-driver=awslogs \
+                        --log-opt awslogs-group=ChainlinkLogs \
+                        --restart unless-stopped \
+                        --name chainlink \
+                        -p 6688:6688 \
+                        -v /home/ec2-user/.chainlink:/chainlink \
+                        --env-file=/home/ec2-user/.chainlink/.env smartcontract/chainlink:0.10.7 local n \
+                        -p /chainlink/.password \
+                        -a /chainlink/.api
     Properties:
       AssociatePublicIpAddress: false
       KeyName: !Ref KeyPairName
@@ -556,40 +635,11 @@ Resources:
             VolumeType: gp2
             DeleteOnTermination: true
       UserData:
-        Fn::Base64: 
-          !Sub 
-            - |
-              #!/bin/bash
-              yum update -y
-              amazon-linux-extras install -y docker
-              systemctl start docker
-              usermod -a -G docker ec2-user
-              yum install -y wget jq awscli
-              echo 'chainNetwork=${BlockchainNetwork}' >> /etc/environment
-              echo 'ethUrl=${EthereumNodeUrl}' >> /etc/environment
-              echo 'psqlUser=${DBMasterUsername}' >> /etc/environment
-              echo 'psqlPwd=${DBMasterUserPassword}' >> /etc/environment
-              echo 'psqlHostname=${DBHostname}' >> /etc/environment
-              echo 'psqlPort=${DBPort}' >> /etc/environment
-              echo 'psqlDb=${DBName}' >> /etc/environment
-              echo 'apiUser=${ChainlinkNodeGUIEmail}' >> /etc/environment
-              echo 'apiPwd=${ChainlinkNodeGUIPassword}' >> /etc/environment
-              echo 'walletPwd=${NodeWalletPassword}' >> /etc/environment
-              mkdir /home/ec2-user/.chainlink
-              mkdir /home/ec2-user/.chainlink/tls
-              wget -O test.sh https://raw.githubusercontent.com/dangitsdavid/test/main/test.sh
-              chmod +x test.sh
-              sudo bash test.sh
-              cd /home/ec2-user/.chainlink
-              docker run -d \
-                --restart unless-stopped \
-                --name chainlink \
-                -p 6689:6689 \
-                -v /home/ec2-user/.chainlink:/chainlink \
-                --env-file=/home/ec2-user/.chainlink/.env smartcontract/chainlink:0.10.7 local n \
-                -p /chainlink/.password \
-                -a /chainlink/.api
-            - DBHostname: !GetAtt AuroraStack.Outputs.RDSEndPointAddress
+        Fn::Base64: |
+          #!/bin/bash -x
+          # install and run cfn-boostrap
+          yum install -y aws-cfn-bootstrap
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource ChainlinkNodeLaunchConfiguration --configsets ec2_bootstrap --region ${AWS::Region}
   ChainlinkNodeSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
