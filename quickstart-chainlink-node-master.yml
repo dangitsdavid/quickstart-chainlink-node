@@ -681,7 +681,7 @@ Resources:
               #       jq: []
               #   commands:
               #     01-set-latest:
-              #       command: echo 'latestimage=$(curl -s -S "https://registry.hub.docker.com/v2/repositories/smartcontract/chainlink/tags/" | jq -r '."results"[]["name"]' | head -n 1)' >> /etc/environment
+              #       command: echo latestimage=$(curl -s -S "https://registry.hub.docker.com/v2/repositories/smartcontract/chainlink/tags/" | jq -r '."results"[]["name"]' | head -n 1) >> /etc/environment
               create-env:
                 packages:
                   yum:
@@ -720,9 +720,9 @@ Resources:
                   05-get-latest-image:
                     command:
                       sudo bash getlatest.sh
-                  06-pull-latest-image:
-                    command:
-                      docker pull smartcontract/chainlink:${latestimage}
+                  # 06-pull-latest-image:
+                  #   command:
+                  #     docker pull smartcontract/chainlink:$latestimage
                   07-run-chainlink-docker:
                     command: |
                       cd /home/ec2-user/.chainlink && docker run \
@@ -753,7 +753,7 @@ Resources:
                         -e ETH_GAS_BUMP_WEI=7000000000 \
                         -e ETH_BALANCE_MONITOR_BLOCK_DELAY=3 \
                         -e ENABLE_BULLETPROOF_TX_MANAGER=true \
-                        smartcontract/chainlink local n \
+                        smartcontract/chainlink:0.10.8 local n \
                         -p ${walletPwd} \
                         -a ${apiUser} \
                         -a ${apiPwd}
@@ -774,7 +774,7 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
-          # cfn-init ec2-bootstrap
+          # run cfn-init ec2-bootstrap
           yum install -y aws-cfn-bootstrap
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource ChainlinkNodeLaunchConfiguration --configsets ec2_bootstrap --region ${AWS::Region}
 
