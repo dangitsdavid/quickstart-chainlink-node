@@ -529,6 +529,9 @@ Resources:
                     command: !Sub "echo 'walletPwd=${NodeWalletPassword}' >> /etc/environment"
                   11-create-chainlink-dir:
                     command: "mkdir /home/ec2-user/.chainlink"
+                  12-set-latest-image:
+                    command: |
+                      "latestimage=$(curl -s -S "https://registry.hub.docker.com/v2/repositories/smartcontract/chainlink/tags/" | jq -r '."results"[]["name"]' | head -n 1"
               install-pkg:
                 packages:
                   yum:
@@ -592,7 +595,7 @@ Resources:
                         -e ETH_GAS_BUMP_WEI=7000000000 \
                         -e ETH_BALANCE_MONITOR_BLOCK_DELAY=3 \
                         -e ENABLE_BULLETPROOF_TX_MANAGER=true \
-                        smartcontract/chainlink:0.10.7 local n \
+                        smartcontract/chainlink:$latestimage local n \
                         -p ${walletPwd} \
                         -a ${apiUser} \
                         -a ${apiPwd}

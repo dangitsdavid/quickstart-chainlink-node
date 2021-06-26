@@ -646,46 +646,47 @@ Resources:
               configSets:
                 ec2_bootstrap:
                   - common-init
-                  - install-pkg
+                  # - set-latest-image
                   - create-env
                   - install-docker
               common-init:
                 commands:
                   01-store-chainnetwork-var:
-                    command: !Sub "echo 'chainNetwork=${BlockchainNetwork}' >> /etc/environment"
+                    command: !Sub echo 'chainNetwork=${BlockchainNetwork}' >> /etc/environment
                   02-store-blockchainrpc-var:
-                    command: !Sub "echo 'ethUrl=${EthereumNodeUrl}' >> /etc/environment"
+                    command: !Sub echo 'ethUrl=${EthereumNodeUrl}' >> /etc/environment
                   03-store-dbuser-var:
-                    command: !Sub "echo 'psqlUser=${DBMasterUsername}' >> /etc/environment"
+                    command: !Sub echo 'psqlUser=${DBMasterUsername}' >> /etc/environment
                   04-store-dbpwd-var:
-                    command: !Sub "echo 'psqlPwd=${DBMasterUserPassword}' >> /etc/environment"
+                    command: !Sub echo 'psqlPwd=${DBMasterUserPassword}' >> /etc/environment
                   05-store-dbhostname-var:
                     command: !Sub 
-                      - "echo 'psqlHostname=${DBHostname}' >> /etc/environment"
+                      - echo 'psqlHostname=${DBHostname}' >> /etc/environment
                       - DBHostname: !GetAtt AuroraStack.Outputs.RDSEndPointAddress
                   06-store-dbport-var:
-                    command: !Sub "echo 'psqlPort=${DBPort}' >> /etc/environment"
+                    command: !Sub echo 'psqlPort=${DBPort}' >> /etc/environment
                   07-store-dbname-var:
-                    command: !Sub "echo 'psqlDb=${DBName}' >> /etc/environment"
+                    command: !Sub echo 'psqlDb=${DBName}' >> /etc/environment
                   08-store-apiuser-var:
-                    command: !Sub "echo 'apiUser=${ChainlinkNodeGUIEmail}' >> /etc/environment"
+                    command: !Sub echo 'apiUser=${ChainlinkNodeGUIEmail}' >> /etc/environment
                   09-store-apipwd-var:
-                    command: !Sub "echo 'apiPwd=${ChainlinkNodeGUIPassword}' >> /etc/environment"
+                    command: !Sub echo 'apiPwd=${ChainlinkNodeGUIPassword}' >> /etc/environment
                   10-store-walletpwd-var:
-                    command: !Sub "echo 'walletPwd=${NodeWalletPassword}' >> /etc/environment"
+                    command: !Sub echo 'walletPwd=${NodeWalletPassword}' >> /etc/environment
                   11-create-chainlink-dir:
-                    command: "mkdir /home/ec2-user/.chainlink"
-                  12-set-latest-image:
-                    command: "latestimage=$(curl -s -S "https://registry.hub.docker.com/v2/repositories/smartcontract/chainlink/tags/" | jq -r '."results"[]["name"]' | head -n 1"
-              install-pkg:
-                packages:
-                  yum:
-                    jq: []
-                    awscli: []
+                    command: mkdir /home/ec2-user/.chainlink
+              # set-latest-image:
+              #   packages:
+              #     yum:
+              #       jq: []
+              #   commands:
+              #     01-set-latest:
+              #       command: echo 'latestimage=$(curl -s -S "https://registry.hub.docker.com/v2/repositories/smartcontract/chainlink/tags/" | jq -r '."results"[]["name"]' | head -n 1)' >> /etc/environment
               create-env:
                 packages:
                   yum:
                     wget: []
+                    jq: []
                 commands:
                   01-dl-script:
                     command:
@@ -696,6 +697,15 @@ Resources:
                   03-create-env-file:
                     command:
                       sudo bash test.sh
+                  04-get-latest-image:
+                    command:
+                      wget -O getlatest.sh https://raw.githubusercontent.com/dangitsdavid/test/main/getlatest.sh
+                  05-script-permission:
+                    command:
+                      chmod +x getlatest.sh
+                  03-create-get-latest-env:
+                    command:
+                      sudo bash getlatest.sh
               install-docker:
                 packages:
                   yum:
@@ -712,16 +722,38 @@ Resources:
                     command: gpasswd -a ec2-user docker
                   03-run-chainlink-docker:
                     command: |
-                      cd /home/ec2-user/.chainlink && docker run -d \
+                      cd /home/ec2-user/.chainlink && docker run \
                         --log-driver=awslogs \
                         --log-opt awslogs-group=ChainlinkLogs \
                         --restart unless-stopped \
                         --name chainlink \
                         -p 6688:6688 \
                         -v /home/ec2-user/.chainlink:/chainlink \
-                        --env-file=/home/ec2-user/.chainlink/.env smartcontract/chainlink:$latestimage local n \
-                        -p /chainlink/.password \
-                        -a /chainlink/.api
+                        -e ROOT=/chainlink \
+                        -e LOG_LEVEL=debug \
+                        -e ETH_CHAIN_ID=${chain} \
+                        -e LINK_CONTRACT_ADDRESS=${contractAddress} \
+                        -e ALLOW_ORIGINS=* \
+                        -e MINIMUM_CONTRACT_PAYMENT=1000000000000 \
+                        -e DEFAULT_HTTP_ALLOW_UNRESTRICTED_NETWORK_ACCESS=true \
+                        -e JSON_CONSOLE=true \
+                        -e MIN_OUTGOING_CONFIRMATIONS=2 \
+                        -e MIN_INCOMING_CONFIRMATIONS=2 \
+                        -e ETH_URL=${ethUrl} \
+                        -e DATABASE_URL=postgresql://${psqlUser}:${psqlPwd}@${psqlHostname}:${psqlPort}/${psqlDb} \
+                        -e DATABASE_TIMEOUT=0 \
+                        -e CHAINLINK_TLS_PORT=0 \
+                        -e SECURE_COOKIES=false \
+                        -e GAS_UPDATER_ENABLED=true \
+                        -e GAS_UPDATER_TRANSACTION_PERCENTILE=60 \
+                        -e ETH_GAS_BUMP_THRESHOLD=9 \
+                        -e ETH_GAS_BUMP_WEI=7000000000 \
+                        -e ETH_BALANCE_MONITOR_BLOCK_DELAY=3 \
+                        -e ENABLE_BULLETPROOF_TX_MANAGER=true \
+                        smartcontract/chainlink local n \
+                        -p ${walletPwd} \
+                        -a ${apiUser} \
+                        -a ${apiPwd}
     Properties:
       AssociatePublicIpAddress: false
       KeyName: !Ref KeyPairName
@@ -739,7 +771,7 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
-          # install and run cfn-boostrap
+          # cfn-init ec2-bootstrap
           yum install -y aws-cfn-bootstrap
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource ChainlinkNodeLaunchConfiguration --configsets ec2_bootstrap --region ${AWS::Region}
 
