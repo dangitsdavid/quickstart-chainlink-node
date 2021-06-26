@@ -686,29 +686,20 @@ Resources:
                 packages:
                   yum:
                     wget: []
-                    jq: []
                 commands:
                   01-dl-script:
                     command:
                       wget -O test.sh https://raw.githubusercontent.com/dangitsdavid/test/main/test.sh
-                  02-script-permission:
+                  02-env-script-permission:
                     command:
                       chmod +x test.sh
                   03-create-env-file:
                     command:
                       sudo bash test.sh
-                  04-get-latest-image:
-                    command:
-                      wget -O getlatest.sh https://raw.githubusercontent.com/dangitsdavid/test/main/getlatest.sh
-                  05-script-permission:
-                    command:
-                      chmod +x getlatest.sh
-                  03-create-get-latest-env:
-                    command:
-                      sudo bash getlatest.sh
               install-docker:
                 packages:
                   yum:
+                    jq: []
                     docker: []
                 services:
                   sysvinit:
@@ -720,7 +711,19 @@ Resources:
                     command: systemctl start docker
                   02-docker-for-ec2-user:
                     command: gpasswd -a ec2-user docker
-                  03-run-chainlink-docker:
+                  03-get-latest-script:
+                    command:
+                      wget -O getlatest.sh https://raw.githubusercontent.com/dangitsdavid/test/main/getlatest.sh
+                  04-getlatest-script-permission:
+                    command:
+                      chmod +x getlatest.sh
+                  05-get-latest-image:
+                    command:
+                      sudo bash getlatest.sh
+                  06-pull-latest-image:
+                    command:
+                      docker pull smartcontract/chainlink:${latestimage}
+                  07-run-chainlink-docker:
                     command: |
                       cd /home/ec2-user/.chainlink && docker run \
                         --log-driver=awslogs \
