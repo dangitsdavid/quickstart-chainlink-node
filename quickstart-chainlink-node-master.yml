@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Start Chainlink Node Quick Start
+Description: Start Chainlink node Quick Start
 Metadata:
   QuickStartDocumentation:
     EntrypointName: 'Launch into a new VPC'
@@ -37,7 +37,7 @@ Metadata:
           - EnableTCPForwarding
           - EnableX11Forwarding
       - Label:
-          default: Chainlink Node configuration
+          default: Chainlink node configuration
         Parameters:
           - BlockchainNetwork
           - ChainlinkNodeGUIEmail
@@ -91,7 +91,7 @@ Metadata:
       ChainlinkNodeInstanceType:
         default: Chainlink node instance type
       ChainlinkNodeRootVolumeSize:
-        default: Chainlink Node root volume size
+        default: Chainlink node root volume size
 
       # linux bastion config labels
       NumBastionHosts:
@@ -113,13 +113,13 @@ Metadata:
       BlockchainNetwork:
         default: Blockchain Network
       ChainlinkNodeGUIEmail:
-        default: Chainlink Node GUI Email
+        default: Chainlink node GUI Email
       ChainlinkNodeGUIPassword:
-        default: Chainlink Node GUI Password
+        default: Chainlink node GUI Password
       EthereumNodeUrl:
-        default: Ethereum Node Websocket Url
+        default: Ethereum node Websocket Url
       NodeWalletPassword:
-        default: Chainlink Node Wallet Password
+        default: Chainlink node Wallet Password
       SSLCertificateARN:
         default: SSL certificate ARN from AWS Certificate Manager
 
@@ -239,10 +239,10 @@ Parameters:
       - t3.xlarge
       - c5.xlarge
     Default: t3.small
-    Description: Amazon EC2 instance type for the Chainlink Nodes instances.
+    Description: Amazon EC2 instance type for the Chainlink node's instances.
     Type: String
   ChainlinkNodeRootVolumeSize:
-    Description: The size in GB for the root EBS volume for Chainlink Nodes.
+    Description: The size in GB for the root EBS volume for Chainlink nodes.
     Type: Number
     Default: '30'
   ImageId:
@@ -305,16 +305,16 @@ Parameters:
       - BSC-Mainnet
       - Matic-Mainnet
     Default: Kovan-ETH-Testnet
-    Description: 'Blockchain Network to run Chainlink Node.'
+    Description: 'Blockchain Network to run Chainlink node.'
     Type: String
   ChainlinkNodeGUIEmail:
     Default: chainlinkuser@email.com
-    Description: 'The Chainlink Node GUI Email.'
+    Description: 'The Chainlink node GUI Email.'
     MaxLength: '64'
     MinLength: '1'
     Type: String
   ChainlinkNodeGUIPassword:
-    Description: 'The Chainlink Node GUI Password.'
+    Description: 'The Chainlink node GUI Password.'
     MaxLength: '64'
     MinLength: '8'
     NoEcho: 'True'
@@ -333,6 +333,7 @@ Parameters:
     Type: String
   SSLCertificateARN:
     Description: 'ARN for the certificate created through AWS Certificate Manager'
+    AllowedPattern: '.+'
     Default: ''
     Type: String
 
@@ -606,7 +607,7 @@ Resources:
   ChainlinkNodeSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      GroupDescription: Enables SSH Access to Chainlink Nodes
+      GroupDescription: Enables SSH Access to Chainlink nodes
       VpcId: !GetAtt 
         - VPCStack
         - Outputs.VPCID
