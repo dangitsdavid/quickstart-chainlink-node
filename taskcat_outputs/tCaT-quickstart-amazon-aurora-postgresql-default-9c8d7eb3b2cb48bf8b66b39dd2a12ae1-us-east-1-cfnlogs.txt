@@ -1,0 +1,19 @@
+-----------------------------------------------------------------------------
+Region: us-east-1
+StackName: tCaT-quickstart-amazon-aurora-postgresql-default-9c8d7eb3b2cb48bf8b66b39dd2a12ae1
+*****************************************************************************
+ResourceStatusReason:  
+Parameter validation failed: parameter value quickstart-staging for parameter name
+KeyPairName does not exist
+*****************************************************************************
+*****************************************************************************
+Events:  
+TimeStamp                         ResourceStatus      ResourceType                LogicalResourceId                                                                  ResourceStatusReason
+--------------------------------  ------------------  --------------------------  ---------------------------------------------------------------------------------  -------------------------------------------------------------------------------------------------------------
+2021-06-27 23:10:46.864000+00:00  CREATE_FAILED       AWS::CloudFormation::Stack  tCaT-quickstart-amazon-aurora-postgresql-default-9c8d7eb3b2cb48bf8b66b39dd2a12ae1  Parameter validation failed: parameter value quickstart-staging for parameter name KeyPairName does not exist
+2021-06-27 23:10:42.740000+00:00  CREATE_IN_PROGRESS  AWS::CloudFormation::Stack  tCaT-quickstart-amazon-aurora-postgresql-default-9c8d7eb3b2cb48bf8b66b39dd2a12ae1  User Initiated
+*****************************************************************************
+-----------------------------------------------------------------------------
+Tested on: Sunday, 27. June 2021 04:11PM
+-----------------------------------------------------------------------------
+

@@ -18,7 +18,6 @@ Metadata:
           - PublicSubnet2CIDR
           - RemoteAccessCIDR
           - VPCTenancy
-          - SSLCertificate
       - Label:
           default: Amazon EC2 configuration
         Parameters:
@@ -45,6 +44,7 @@ Metadata:
           - ChainlinkNodeGUIPassword
           - EthereumNodeUrl
           - NodeWalletPassword
+          - SSLCertificateARN
       - Label:
           default: Aurora PostreSQL configuration
         Parameters:
@@ -82,8 +82,6 @@ Metadata:
         default: Allowed bastion external access CIDR
       VPCTenancy:
         default: VPC tenancy
-      SSLCertificate:
-        default: SSL certificate ARN
 
       # amazon ec2 config labels
       KeyPairName:
@@ -122,6 +120,8 @@ Metadata:
         default: Ethereum Node Websocket Url
       NodeWalletPassword:
         default: Chainlink Node Wallet Password
+      SSLCertificateARN:
+        default: SSL certificate ARN from AWS Certificate Manager
 
       # db config labels
       DBName:
@@ -200,10 +200,6 @@ Parameters:
       - dedicated
     Default: default
     Description: The allowed tenancy of instances launched into the VPC.
-    Type: String
-  SSLCertificate:
-    Description: 'ARN for the Certificate'
-    Default: ''
     Type: String
 
   # Amazon EC2 Configuration
@@ -334,6 +330,10 @@ Parameters:
     MaxLength: '32'
     MinLength: '9'
     NoEcho: 'True'
+    Type: String
+  SSLCertificateARN:
+    Description: 'ARN for the certificate created through AWS Certificate Manager'
+    Default: ''
     Type: String
 
   # PostreSQL DB Configuration
@@ -774,9 +774,37 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
-          # run cfn-init ec2-bootstrap
-          yum install -y aws-cfn-bootstrap
-          /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource ChainlinkNodeLaunchConfiguration --configsets ec2_bootstrap --region ${AWS::Region}
+          # cfn fail functions
+          function cfn_fail
+          {
+            cfn-signal -e 1 --stack ${AWS::StackName} --region ${AWS::Region} --resource CordaInstance
+            exit 1
+          }
+          function cfn_success
+          {
+            cfn-signal -e 0 --stack ${AWS::StackName} --region ${AWS::Region} --resource CordaInstance
+            exit 0
+          }
+          # install git and run cfn-bootstrap
+          yum install -y git
+          git clone https://github.com/aws-quickstart/quickstart-linux-utilities.git
+          cd /quickstart-linux-utilities
+          source quickstart-cfn-tools.source
+          qs_update-os || qs_err
+          qs_bootstrap_pip || qs_err
+          qs_aws-cfn-bootstrap || qs_err
+          # create cloudwatch log group
+          sed -i "s/__LOGGROUP__/${ChainlinkNodeInitLogGroup}/g" cloudwatch_logs.stub
+          # install cloudwatch - issue of failing to determine linux distribution on Amazon Linux 2 AMI
+          echo 'Amazon Linux AMI' > /etc/issue
+          qs_cloudwatch_install || qs_err
+          # debug cfn-init logs
+          qs_cloudwatch_tracklog /var/log/cfn-init.log
+          qs_cloudwatch_tracklog /var/log/cfn-init-cmd.log
+          # cfn-init bootstrap
+          cfn-init -v --stack ${AWS::StackName} --resource ChainlinkNodeLaunchConfiguration --configsets ec2_bootstrap --region ${AWS::Region}
+          cfn_fail
+          [ $(qs_status) == 0 ] && cfn_success || cfn_fail
 
   ChainlinkNodeInstanceProfile:
     Type: AWS::IAM::InstanceProfile
@@ -807,12 +835,29 @@ Resources:
               - Resource: '*'
                 Effect: Allow 
                 Action:
-                  - logs:CreateLogStream
-                  - logs:CreateLogGroup
-                  - logs:PutLogEvents
-                  - cloudwatch:PutMetricData
-                  - cloudwatch:GetMetricStatistics
-                  - cloudwatch:ListMetrics
+                  - 'logs:CreateLogStream'
+                  - 'logs:CreateLogGroup'
+                  - 'logs:PutLogEvents'
+                  - 'logs:DescribeLogStreams'
+              - Effect: Allow
+                Action:
+                  - 'cloudwatch:PutMetricData'
+                  - 'cloudwatch:GetMetricStatistics'
+                  - 'cloudwatch:ListMetrics'
+                Resource:
+                  - '*'
+              - Effect: Allow
+                Action:
+                  - 'ec2:DescribeInstances'
+                Resource: '*'
+              - Resource:
+                  - !Ref DBSecret
+                  - !Ref ApiSecret
+                  - !Ref WalletSecret
+                Effect: "Allow"
+                Action:
+                  - secretsmanager:GetSecretValue
+                  # - ssm:GetParameters
 
   # ChainlinkLogRole:
   #   Type: 'AWS::IAM::Role'
@@ -892,32 +937,44 @@ Resources:
     Properties:
       LoadBalancerArn: !Ref ChainlinkNodeELB
       Certificates: 
-        - CertificateArn: !Ref SSLCertificate
+        - CertificateArn: !Ref SSLCertificateARN
       DefaultActions:
         - Type: 'forward'
           TargetGroupArn: !Ref ChainlinkNodeTargetGroup
       Port: 443
       Protocol: 'HTTPS'
       SslPolicy: 'ELBSecurityPolicy-2016-08'
-  #Docker Logs to Cloudwatch
+  # Cloudwatch
   ChainlinkLogGroup:
     Type: 'AWS::Logs::LogGroup'
     Properties:
       LogGroupName: ChainlinkLogs
       RetentionInDays: 7
+  ChainlinkNodeInitLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: ChainlinkNodeInitLogGroup
+      RetentionInDays: 7
 
-  DatabaseCreds:
+  # Secrets
+  DBSecret:
     Type: 'AWS::SecretsManager::Secret'
     Properties:
-      Name: DatabaseCreds
-      Description: This secret credentials for DatabaseCreds
-      SecretString: !Sub '{"username":"${DBMasterUsername}","password":"${DBMasterUserPassword}"'
-  # DatabaseCreds:
-  #   Type: 'AWS::SecretsManager::Secret'
-  #   Properties:
-  #     Name: DatabaseCreds
-  #     Description: This secret credentials for DatabaseCreds
-  #     SecretString: !Sub '{"username":"${DBMasterUsername}","password":"${DBMasterUserPassword}"'
+      Name: DBSecret
+      Description: Secret password for PostgreSQL database.
+      SecretString: !Sub '{"psqlPwd":"${DBMasterUserPassword}"'
+  ApiSecret:
+    Type: 'AWS::SecretsManager::Secret'
+    Properties:
+      Name: ApiSecret
+      Description: Secret password for Chainlink node GUI
+      SecretString: !Sub '{"apiPwd":"${ChainlinkNodeGUIPassword}"'
+  WalletSecret:
+    Type: 'AWS::SecretsManager::Secret'
+    Properties:
+      Name: WalletSecret
+      Description: Secret password for Chainlink node wallet password
+      SecretString: !Sub '{"walletPwd":"${NodeWalletPassword}"'
 
   # DBSecrets:
   #   Type: AWS::SecretsManager::SecretTargetAttachment

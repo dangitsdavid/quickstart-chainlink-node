@@ -1,0 +1,21 @@
+-----------------------------------------------------------------------------
+Region: us-east-1
+StackName: tCaT-quickstart-chainlink-node-default-c383c6ae420a453d9abf44c4671f7f29
+*****************************************************************************
+ResourceStatusReason:  
+Parameter validation failed: parameter value quickstart-staging for parameter name
+KeyPairName does not exist, parameter value $[taskcat_genaz_1 for parameter name
+AvailabilityZones does not exist, parameter value taskcat_genaz_2] for parameter name
+AvailabilityZones does not exist
+*****************************************************************************
+*****************************************************************************
+Events:  
+TimeStamp                         ResourceStatus      ResourceType                LogicalResourceId                                                        ResourceStatusReason
+--------------------------------  ------------------  --------------------------  -----------------------------------------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+2021-06-27 23:16:34.947000+00:00  CREATE_FAILED       AWS::CloudFormation::Stack  tCaT-quickstart-chainlink-node-default-c383c6ae420a453d9abf44c4671f7f29  Parameter validation failed: parameter value quickstart-staging for parameter name KeyPairName does not exist, parameter value $[taskcat_genaz_1 for parameter name AvailabilityZones does not exist, parameter value taskcat_genaz_2] for parameter name AvailabilityZones does not exist
+2021-06-27 23:16:30.668000+00:00  CREATE_IN_PROGRESS  AWS::CloudFormation::Stack  tCaT-quickstart-chainlink-node-default-c383c6ae420a453d9abf44c4671f7f29  User Initiated
+*****************************************************************************
+-----------------------------------------------------------------------------
+Tested on: Sunday, 27. June 2021 04:17PM
+-----------------------------------------------------------------------------
+

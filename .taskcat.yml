@@ -1,0 +1,15 @@
+project:
+  name: quickstart-chainlink-node
+  regions:
+  - us-east-1
+  # - us-west-1
+tests:
+  default:
+    template: ./quickstart-chainlink-node-master.yml
+    parameters:
+      AvailabilityZones: $[taskcat_genaz_2]
+      KeyPairName: quickstart-staging
+      ChainlinkNodeGUIPassword: 'CHAINlink123!@#'
+      NodeWalletPassword: 'CHAINlink123!@#'
+      DBMasterUserPassword: 'Docker_1234'
+      SSLCertificateARN: 'arn:aws:acm:us-east-1:389435844244:certificate/8b0b7ba3-09f9-4101-875a-75236b2044bd'
