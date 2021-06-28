@@ -712,28 +712,29 @@ Resources:
                     command: systemctl start docker
                   02-docker-for-ec2-user:
                     command: gpasswd -a ec2-user docker
-                  03-get-latest-script:
-                    command:
-                      wget -O getlatest.sh https://raw.githubusercontent.com/dangitsdavid/test/main/getlatest.sh
-                  04-getlatest-script-permission:
-                    command:
-                      chmod +x getlatest.sh
-                  05-get-latest-image:
-                    command:
-                      sudo bash getlatest.sh
+                  # 03-get-latest-script:
+                  #   command:
+                  #     wget -O getlatest.sh https://raw.githubusercontent.com/dangitsdavid/test/main/getlatest.sh
+                  # 04-getlatest-script-permission:
+                  #   command:
+                  #     chmod +x getlatest.sh
+                  # 05-get-latest-image:
+                  #   command:
+                  #     sudo bash getlatest.sh
                   # 06-pull-latest-image:
                   #   command:
                   #     docker pull smartcontract/chainlink:$latestimage
                   07-run-chainlink-docker:
                     command: |
-                      cd /home/ec2-user/.chainlink && docker run \
+                      latestimage=$(curl -s -S "https://registry.hub.docker.com/v2/repositories/smartcontract/chainlink/tags/" | jq -r '."results"[]["name"]' | head -n 1)
+                        cd /home/ec2-user/.chainlink && docker run \
                         --log-driver=awslogs \
                         --log-opt awslogs-group=ChainlinkLogs \
                         --restart unless-stopped \
                         --name chainlink \
                         -p 6688:6688 \
                         -v /home/ec2-user/.chainlink:/chainlink \
-                        --env-file=/home/ec2-user/.chainlink/.env  smartcontract/chainlink:0.10.8 local n \
+                        --env-file=/home/ec2-user/.chainlink/.env  smartcontract/chainlink:$latestimage local n \
                         -p /chainlink/.password \
                         -a /chainlink/.api
     Properties:
