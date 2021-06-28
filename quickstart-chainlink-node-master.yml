@@ -668,7 +668,8 @@ Resources:
                   07-store-dbname-var:
                     command: !Sub echo 'psqlDb=${DBName}' >> /etc/environment
                   08-store-apiuser-var:
-                    command: !Sub echo 'apiUser=${ChainlinkNodeGUIEmail}' >> /etc/environment
+                    command: !Sub 
+                      echo 'apiUser=${ChainlinkNodeGUIEmail}' >> /etc/environment
                   09-store-apipwd-var:
                     command: !Sub echo 'apiPwd=${ChainlinkNodeGUIPassword}' >> /etc/environment
                   10-store-walletpwd-var:
@@ -732,31 +733,9 @@ Resources:
                         --name chainlink \
                         -p 6688:6688 \
                         -v /home/ec2-user/.chainlink:/chainlink \
-                        -e ROOT=/chainlink \
-                        -e LOG_LEVEL=debug \
-                        -e ETH_CHAIN_ID=${chain} \
-                        -e LINK_CONTRACT_ADDRESS=${contractAddress} \
-                        -e ALLOW_ORIGINS=* \
-                        -e MINIMUM_CONTRACT_PAYMENT=1000000000000 \
-                        -e DEFAULT_HTTP_ALLOW_UNRESTRICTED_NETWORK_ACCESS=true \
-                        -e JSON_CONSOLE=true \
-                        -e MIN_OUTGOING_CONFIRMATIONS=2 \
-                        -e MIN_INCOMING_CONFIRMATIONS=2 \
-                        -e ETH_URL=${ethUrl} \
-                        -e DATABASE_URL=postgresql://${psqlUser}:${psqlPwd}@${psqlHostname}:${psqlPort}/${psqlDb} \
-                        -e DATABASE_TIMEOUT=0 \
-                        -e CHAINLINK_TLS_PORT=0 \
-                        -e SECURE_COOKIES=false \
-                        -e GAS_UPDATER_ENABLED=true \
-                        -e GAS_UPDATER_TRANSACTION_PERCENTILE=60 \
-                        -e ETH_GAS_BUMP_THRESHOLD=9 \
-                        -e ETH_GAS_BUMP_WEI=7000000000 \
-                        -e ETH_BALANCE_MONITOR_BLOCK_DELAY=3 \
-                        -e ENABLE_BULLETPROOF_TX_MANAGER=true \
-                        smartcontract/chainlink:0.10.8 local n \
-                        -p ${walletPwd} \
-                        -a ${apiUser} \
-                        -a ${apiPwd}
+                        --env-file=/home/ec2-user/.chainlink/.env  smartcontract/chainlink:0.10.8 local n \
+                        -p /chainlink/.password \
+                        -a /chainlink/.api
     Properties:
       AssociatePublicIpAddress: false
       KeyName: !Ref KeyPairName
@@ -774,7 +753,7 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
-          # cfn fail functions
+          # cfn functions
           function cfn_fail
           {
             cfn-signal -e 1 --stack ${AWS::StackName} --region ${AWS::Region} --resource CordaInstance
@@ -801,7 +780,7 @@ Resources:
           # debug cfn-init logs
           qs_cloudwatch_tracklog /var/log/cfn-init.log
           qs_cloudwatch_tracklog /var/log/cfn-init-cmd.log
-          # cfn-init bootstrap
+          # run cfn-init bootstrap
           cfn-init -v --stack ${AWS::StackName} --resource ChainlinkNodeLaunchConfiguration --configsets ec2_bootstrap --region ${AWS::Region}
           cfn_fail
           [ $(qs_status) == 0 ] && cfn_success || cfn_fail

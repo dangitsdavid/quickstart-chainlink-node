@@ -610,9 +610,8 @@ Resources:
                         -e ETH_BALANCE_MONITOR_BLOCK_DELAY=3 \
                         -e ENABLE_BULLETPROOF_TX_MANAGER=true \
                         smartcontract/chainlink:0.10.8 local n \
-                        -p ${walletPwd} \
-                        -a ${apiUser} \
-                        -a ${apiPwd}
+                        -p /chainlink/.password \
+                        -a /chainlink/.api
     Properties:
       AssociatePublicIpAddress: false
       KeyName: !Ref KeyPairName
