@@ -580,7 +580,7 @@ Resources:
                   #   command:
                   #     docker pull smartcontract/chainlink:$latestimage
                   07-run-chainlink-docker:
-                    command: |
+                    command: !Sub |
                       cd /home/ec2-user/.chainlink && docker run \
                         --log-driver=awslogs \
                         --log-opt awslogs-group=ChainlinkLogs \
@@ -599,7 +599,7 @@ Resources:
                         -e MIN_OUTGOING_CONFIRMATIONS=2 \
                         -e MIN_INCOMING_CONFIRMATIONS=2 \
                         -e ETH_URL=${ethUrl} \
-                        -e DATABASE_URL=postgresql://${psqlUser}:${psqlPwd}@${psqlHostname}:${psqlPort}/${psqlDb} \
+                        -e DATABASE_URL=postgresql://${DBMasterUsername}:${DBMasterUserPassword}@${psqlHostname}:${DBPort}/${DBName} \
                         -e DATABASE_TIMEOUT=0 \
                         -e CHAINLINK_TLS_PORT=0 \
                         -e SECURE_COOKIES=false \

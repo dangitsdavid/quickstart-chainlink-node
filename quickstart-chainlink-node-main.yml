@@ -229,15 +229,44 @@ Parameters:
       - t3.micro
       - t3.small
       - t3.medium
+      - t3.large
+      - t3.xlarge
+      - t3.2xlarge
       - m3.large
       - m3.xlarge
+      - m3.2xlarge
+      - m4.large
+      - m4.xlarge
+      - m4.2xlarge
+      - m4.4xlarge
   ChainlinkNodeInstanceType:
     AllowedValues:
+      - t2.nano
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - t3.micro
       - t3.small
       - t3.medium
       - t3.large
       - t3.xlarge
+      - t3.2xlarge
+      - m3.large
+      - m3.xlarge
+      - m3.2xlarge
+      - m4.large
+      - m4.xlarge
+      - m4.2xlarge
+      - m4.4xlarge
+      - m5.large
+      - m5.xlarge
+      - m5.2xlarge
+      - m5.4xlarge
+      - c5.large
       - c5.xlarge
+      - c5.2xlarge
+      - c5.4xlarge
     Default: t3.small
     Description: Amazon EC2 instance type for the Chainlink node's instances.
     Type: String
@@ -334,7 +363,7 @@ Parameters:
   SSLCertificateARN:
     Description: 'ARN for the certificate created through AWS Certificate Manager'
     AllowedPattern: '.+'
-    Default: ''
+    Default: 'arn:aws:acm:region:certificate'
     Type: String
 
   # PostreSQL DB Configuration
@@ -481,7 +510,6 @@ Resources:
         PublicSubnet2CIDR: !Ref PublicSubnet2CIDR
         VPCCIDR: !Ref VPCCIDR
         VPCTenancy: !Ref VPCTenancy
-
   #############################################################
   # bastion-stack (REMOVE FOR PROD and place in workload stack)
   #############################################################
@@ -657,7 +685,6 @@ Resources:
               configSets:
                 ec2_bootstrap:
                   - common-init
-                  # - set-latest-image
                   - create-env
                   - install-docker
               common-init:
@@ -687,13 +714,6 @@ Resources:
                     command: !Sub echo 'walletPwd=${NodeWalletPassword}' >> /etc/environment
                   11-create-chainlink-dir:
                     command: mkdir /home/ec2-user/.chainlink
-              # set-latest-image:
-              #   packages:
-              #     yum:
-              #       jq: []
-              #   commands:
-              #     01-set-latest:
-              #       command: echo latestimage=$(curl -s -S "https://registry.hub.docker.com/v2/repositories/smartcontract/chainlink/tags/" | jq -r '."results"[]["name"]' | head -n 1) >> /etc/environment
               create-env:
                 packages:
                   yum:
@@ -723,18 +743,6 @@ Resources:
                     command: systemctl start docker
                   02-docker-for-ec2-user:
                     command: gpasswd -a ec2-user docker
-                  # 03-get-latest-script:
-                  #   command:
-                  #     wget -O getlatest.sh https://raw.githubusercontent.com/dangitsdavid/test/main/getlatest.sh
-                  # 04-getlatest-script-permission:
-                  #   command:
-                  #     chmod +x getlatest.sh
-                  # 05-get-latest-image:
-                  #   command:
-                  #     sudo bash getlatest.sh
-                  # 06-pull-latest-image:
-                  #   command:
-                  #     docker pull smartcontract/chainlink:$latestimage
                   07-run-chainlink-docker:
                     command: |
                       latestimage=$(curl -s -S "https://registry.hub.docker.com/v2/repositories/smartcontract/chainlink/tags/" | jq -r '."results"[]["name"]' | head -n 1)
@@ -768,12 +776,12 @@ Resources:
           # cfn functions
           function cfn_fail
           {
-            cfn-signal -e 1 --stack ${AWS::StackName} --region ${AWS::Region} --resource CordaInstance
+            cfn-signal -e 1 --stack ${AWS::StackName} --region ${AWS::Region} --resource ChainlinkNodeLaunchConfiguration
             exit 1
           }
           function cfn_success
           {
-            cfn-signal -e 0 --stack ${AWS::StackName} --region ${AWS::Region} --resource CordaInstance
+            cfn-signal -e 0 --stack ${AWS::StackName} --region ${AWS::Region} --resource ChainlinkNodeLaunchConfiguration
             exit 0
           }
           # install git and run cfn-bootstrap
@@ -796,7 +804,6 @@ Resources:
           cfn-init -v --stack ${AWS::StackName} --resource ChainlinkNodeLaunchConfiguration --configsets ec2_bootstrap --region ${AWS::Region}
           cfn_fail
           [ $(qs_status) == 0 ] && cfn_success || cfn_fail
-
   ChainlinkNodeInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
@@ -841,32 +848,14 @@ Resources:
                 Action:
                   - 'ec2:DescribeInstances'
                 Resource: '*'
-              - Resource:
-                  - !Ref DBSecret
-                  - !Ref ApiSecret
-                  - !Ref WalletSecret
-                Effect: "Allow"
-                Action:
-                  - secretsmanager:GetSecretValue
-                  # - ssm:GetParameters
-
-  # ChainlinkLogRole:
-  #   Type: 'AWS::IAM::Role'
-  #   Properties:
-  #     AssumeRolePolicyDocument:
-  #       Version: 2012-10-17
-  #       Statement:
-  #         - Effect: Allow
-  #           Principal:
-  #             Service:
-  #               - !Sub 'ec2.${AWS::URLSuffix}'
-  #           Action:
-  #             - sts:AssumeRole
-  #     Path: /
-  #     RoleName: ChainlinkLogs
-  #     ManagedPolicyArns:
-  #       - 'arn:aws:iam::aws:policy/CloudWatchLogsFullAccess'
-  #SecurityGroup for ELB
+              # - Resource:
+              #     - !Ref DBSecret
+              #     - !Ref ApiSecret
+              #     - !Ref WalletSecret
+              #   Effect: "Allow"
+              #   Action:
+              #     - secretsmanager:GetSecretValue
+              #     - ssm:GetParameters
   ELBSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -883,7 +872,6 @@ Resources:
           FromPort: 443
           ToPort: 443
           CidrIp: !Ref RemoteAccessCIDR
-  #ELB for UI access
   ChainlinkNodeELB:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
@@ -935,7 +923,6 @@ Resources:
       Port: 443
       Protocol: 'HTTPS'
       SslPolicy: 'ELBSecurityPolicy-2016-08'
-  # Cloudwatch
   ChainlinkLogGroup:
     Type: 'AWS::Logs::LogGroup'
     Properties:
@@ -946,30 +933,21 @@ Resources:
     Properties:
       LogGroupName: ChainlinkNodeInitLogGroup
       RetentionInDays: 7
-
-  # Secrets
-  DBSecret:
-    Type: 'AWS::SecretsManager::Secret'
-    Properties:
-      Name: DBSecret
-      Description: Secret password for PostgreSQL database.
-      SecretString: !Sub '{"psqlPwd":"${DBMasterUserPassword}"'
-  ApiSecret:
-    Type: 'AWS::SecretsManager::Secret'
-    Properties:
-      Name: ApiSecret
-      Description: Secret password for Chainlink node GUI
-      SecretString: !Sub '{"apiPwd":"${ChainlinkNodeGUIPassword}"'
-  WalletSecret:
-    Type: 'AWS::SecretsManager::Secret'
-    Properties:
-      Name: WalletSecret
-      Description: Secret password for Chainlink node wallet password
-      SecretString: !Sub '{"walletPwd":"${NodeWalletPassword}"'
-
-  # DBSecrets:
-  #   Type: AWS::SecretsManager::SecretTargetAttachment
-  #   Properties: 
-  #     SecretId: !Ref DatabaseCreds
-  #     TargetId: String
-  #     TargetType: String
+  # DBSecret:
+  #   Type: 'AWS::SecretsManager::Secret'
+  #   Properties:
+  #     Name: DBSecret
+  #     Description: Secret password for PostgreSQL database.
+  #     SecretString: !Sub '{"psqlPwd":"${DBMasterUserPassword}"'
+  # ApiSecret:
+  #   Type: 'AWS::SecretsManager::Secret'
+  #   Properties:
+  #     Name: ApiSecret
+  #     Description: Secret password for Chainlink node GUI
+  #     SecretString: !Sub '{"apiPwd":"${ChainlinkNodeGUIPassword}"'
+  # WalletSecret:
+  #   Type: 'AWS::SecretsManager::Secret'
+  #   Properties:
+  #     Name: WalletSecret
+  #     Description: Secret password for Chainlink node wallet password
+  #     SecretString: !Sub '{"walletPwd":"${NodeWalletPassword}"'

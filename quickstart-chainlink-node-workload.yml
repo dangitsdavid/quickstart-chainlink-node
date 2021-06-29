@@ -17,7 +17,6 @@ Metadata:
           - RemoteAccessCIDR
           - VPCCIDR
           - VPCID
-          - SSLCertificate
       - Label:
           default: Amazon EC2 configuration
         Parameters:
@@ -44,6 +43,7 @@ Metadata:
           - ChainlinkNodeGUIPassword
           - EthereumNodeUrl
           - NodeWalletPassword
+          - SSLCertificateARN
       - Label:
           default: Aurora PostreSQL configuration
         Parameters:
@@ -79,8 +79,6 @@ Metadata:
         default: VPC ID
       VPCCIDR:
         default: VPC CIDR
-      SSLCertificate:
-        default: SSL certificate ARN
 
       # amazon ec2 config labels
       KeyPairName:
@@ -119,6 +117,8 @@ Metadata:
         default: Ethereum node Websocket Url
       NodeWalletPassword:
         default: Chainlink node Wallet Password
+      SSLCertificateARN:
+        default: SSL certificate ARN
 
       # db config labels
       DBName:
@@ -179,11 +179,6 @@ Parameters:
   VPCID:
     Description: 'ID of the VPC (e.g., vpc-0343606e)'
     Type: 'AWS::EC2::VPC::Id'
-  SSLCertificate:
-    Description: 'ARN for the Certificate'
-    AllowedPattern: '.+'
-    Default: ''
-    Type: String
 
   # Amazon EC2 Configuration
   KeyPairName:
@@ -224,11 +219,32 @@ Parameters:
       - m4.4xlarge
   ChainlinkNodeInstanceType:
     AllowedValues:
+      - t2.nano
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - t3.micro
       - t3.small
       - t3.medium
       - t3.large
       - t3.xlarge
+      - t3.2xlarge
+      - m3.large
+      - m3.xlarge
+      - m3.2xlarge
+      - m4.large
+      - m4.xlarge
+      - m4.2xlarge
+      - m4.4xlarge
+      - m5.large
+      - m5.xlarge
+      - m5.2xlarge
+      - m5.4xlarge
+      - c5.large
       - c5.xlarge
+      - c5.2xlarge
+      - c5.4xlarge
     Default: t3.small
     Description: Amazon EC2 instance type for the Chainlink node's instances.
     Type: String
@@ -321,6 +337,11 @@ Parameters:
     MaxLength: '32'
     MinLength: '9'
     NoEcho: 'True'
+    Type: String
+  SSLCertificateARN:
+    Description: 'ARN for the Certificate'
+    AllowedPattern: '.+'
+    Default: 'arn:aws:acm:region:certificate'
     Type: String
 
   # PostreSQL DB Configuration
@@ -530,6 +551,20 @@ Resources:
   ###############################################
   # chainlink-node-manual-stack (REMOVE FOR PROD)
   ###############################################
+  ChainlinkNodeSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enables SSH Access to Chainlink nodes
+      VpcId: !Ref VPCID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref VPCCIDR
+        - IpProtocol: tcp
+          FromPort: 6688
+          ToPort: 6688
+          CidrIp: !Ref VPCCIDR
   ChainlinkNodeAutoScalingGroup:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
@@ -557,40 +592,35 @@ Resources:
               configSets:
                 ec2_bootstrap:
                   - common-init
-                  - install-pkg
                   - create-env
                   - install-docker
               common-init:
                 commands:
                   01-store-chainnetwork-var:
-                    command: !Sub "echo 'chainNetwork=${BlockchainNetwork}' >> /etc/environment"
+                    command: !Sub echo 'chainNetwork=${BlockchainNetwork}' >> /etc/environment
                   02-store-blockchainrpc-var:
-                    command: !Sub "echo 'ethUrl=${EthereumNodeUrl}' >> /etc/environment"
+                    command: !Sub echo 'ethUrl=${EthereumNodeUrl}' >> /etc/environment
                   03-store-dbuser-var:
-                    command: !Sub "echo 'psqlUser=${DBMasterUsername}' >> /etc/environment"
+                    command: !Sub echo 'psqlUser=${DBMasterUsername}' >> /etc/environment
                   04-store-dbpwd-var:
-                    command: !Sub "echo 'psqlPwd=${DBMasterUserPassword}' >> /etc/environment"
+                    command: !Sub echo 'psqlPwd=${DBMasterUserPassword}' >> /etc/environment
                   05-store-dbhostname-var:
                     command: !Sub 
-                      - "echo 'psqlHostname=${DBHostname}' >> /etc/environment"
+                      - echo 'psqlHostname=${DBHostname}' >> /etc/environment
                       - DBHostname: !GetAtt AuroraStack.Outputs.RDSEndPointAddress
                   06-store-dbport-var:
-                    command: !Sub "echo 'psqlPort=${DBPort}' >> /etc/environment"
+                    command: !Sub echo 'psqlPort=${DBPort}' >> /etc/environment
                   07-store-dbname-var:
-                    command: !Sub "echo 'psqlDb=${DBName}' >> /etc/environment"
+                    command: !Sub echo 'psqlDb=${DBName}' >> /etc/environment
                   08-store-apiuser-var:
-                    command: !Sub "echo 'apiUser=${ChainlinkNodeGUIEmail}' >> /etc/environment"
+                    command: !Sub 
+                      echo 'apiUser=${ChainlinkNodeGUIEmail}' >> /etc/environment
                   09-store-apipwd-var:
-                    command: !Sub "echo 'apiPwd=${ChainlinkNodeGUIPassword}' >> /etc/environment"
+                    command: !Sub echo 'apiPwd=${ChainlinkNodeGUIPassword}' >> /etc/environment
                   10-store-walletpwd-var:
-                    command: !Sub "echo 'walletPwd=${NodeWalletPassword}' >> /etc/environment"
+                    command: !Sub echo 'walletPwd=${NodeWalletPassword}' >> /etc/environment
                   11-create-chainlink-dir:
-                    command: "mkdir /home/ec2-user/.chainlink"
-              install-pkg:
-                packages:
-                  yum:
-                    jq: []
-                    awscli: []
+                    command: mkdir /home/ec2-user/.chainlink
               create-env:
                 packages:
                   yum:
@@ -599,7 +629,7 @@ Resources:
                   01-dl-script:
                     command:
                       wget -O test.sh https://raw.githubusercontent.com/dangitsdavid/test/main/test.sh
-                  02-script-permission:
+                  02-env-script-permission:
                     command:
                       chmod +x test.sh
                   03-create-env-file:
@@ -608,6 +638,7 @@ Resources:
               install-docker:
                 packages:
                   yum:
+                    jq: []
                     docker: []
                 services:
                   sysvinit:
@@ -619,16 +650,17 @@ Resources:
                     command: systemctl start docker
                   02-docker-for-ec2-user:
                     command: gpasswd -a ec2-user docker
-                  03-run-chainlink-docker:
+                  07-run-chainlink-docker:
                     command: |
-                      cd /home/ec2-user/.chainlink && docker run -d \
+                      latestimage=$(curl -s -S "https://registry.hub.docker.com/v2/repositories/smartcontract/chainlink/tags/" | jq -r '."results"[]["name"]' | head -n 1)
+                        cd /home/ec2-user/.chainlink && docker run \
                         --log-driver=awslogs \
                         --log-opt awslogs-group=ChainlinkLogs \
                         --restart unless-stopped \
                         --name chainlink \
                         -p 6688:6688 \
                         -v /home/ec2-user/.chainlink:/chainlink \
-                        --env-file=/home/ec2-user/.chainlink/.env smartcontract/chainlink:0.10.7 local n \
+                        --env-file=/home/ec2-user/.chainlink/.env  smartcontract/chainlink:$latestimage local n \
                         -p /chainlink/.password \
                         -a /chainlink/.api
     Properties:
@@ -646,27 +678,39 @@ Resources:
             VolumeType: gp2
             DeleteOnTermination: true
       UserData:
-        Fn::Base64: 
-          !Sub |
-                #!/bin/bash -x
-                # install and run cfn-boostrap
-                # remove comment for prod
-                yum install -y aws-cfn-bootstrap
-                /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource ChainlinkNodeLaunchConfiguration --configsets ec2_bootstrap --region ${AWS::Region}
-  ChainlinkNodeSecurityGroup:
-    Type: 'AWS::EC2::SecurityGroup'
-    Properties:
-      GroupDescription: Enables SSH Access to Chainlink nodes
-      VpcId: !Ref VPCID
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: !Ref VPCCIDR
-        - IpProtocol: tcp
-          FromPort: 6688
-          ToPort: 6688
-          CidrIp: !Ref VPCCIDR
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          # cfn functions
+          function cfn_fail
+          {
+            cfn-signal -e 1 --stack ${AWS::StackName} --region ${AWS::Region} --resource ChainlinkNodeLaunchConfiguration
+            exit 1
+          }
+          function cfn_success
+          {
+            cfn-signal -e 0 --stack ${AWS::StackName} --region ${AWS::Region} --resource ChainlinkNodeLaunchConfiguration
+            exit 0
+          }
+          # install git and run cfn-bootstrap
+          yum install -y git
+          git clone https://github.com/aws-quickstart/quickstart-linux-utilities.git
+          cd /quickstart-linux-utilities
+          source quickstart-cfn-tools.source
+          qs_update-os || qs_err
+          qs_bootstrap_pip || qs_err
+          qs_aws-cfn-bootstrap || qs_err
+          # create cloudwatch log group
+          sed -i "s/__LOGGROUP__/${ChainlinkNodeInitLogGroup}/g" cloudwatch_logs.stub
+          # install cloudwatch - issue of failing to determine linux distribution on Amazon Linux 2 AMI
+          echo 'Amazon Linux AMI' > /etc/issue
+          qs_cloudwatch_install || qs_err
+          # debug cfn-init logs
+          qs_cloudwatch_tracklog /var/log/cfn-init.log
+          qs_cloudwatch_tracklog /var/log/cfn-init-cmd.log
+          # run cfn-init bootstrap
+          cfn-init -v --stack ${AWS::StackName} --resource ChainlinkNodeLaunchConfiguration --configsets ec2_bootstrap --region ${AWS::Region}
+          cfn_fail
+          [ $(qs_status) == 0 ] && cfn_success || cfn_fail
   ChainlinkNodeInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
@@ -688,6 +732,37 @@ Resources:
       Path: /
       ManagedPolicyArns:
         - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
+      Policies:
+        - PolicyName: LogsPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: '*'
+                Effect: Allow 
+                Action:
+                  - 'logs:CreateLogStream'
+                  - 'logs:CreateLogGroup'
+                  - 'logs:PutLogEvents'
+                  - 'logs:DescribeLogStreams'
+              - Effect: Allow
+                Action:
+                  - 'cloudwatch:PutMetricData'
+                  - 'cloudwatch:GetMetricStatistics'
+                  - 'cloudwatch:ListMetrics'
+                Resource:
+                  - '*'
+              - Effect: Allow
+                Action:
+                  - 'ec2:DescribeInstances'
+                Resource: '*'
+              # - Resource:
+              #     - !Ref DBSecret
+              #     - !Ref ApiSecret
+              #     - !Ref WalletSecret
+              #   Effect: "Allow"
+              #   Action:
+              #     - secretsmanager:GetSecretValue
+              #     - ssm:GetParameters
   ELBSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -697,11 +772,11 @@ Resources:
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
-          CidrIp: 0.0.0.0/0
+          CidrIp: !Ref RemoteAccessCIDR
         - IpProtocol: tcp
           FromPort: 443
           ToPort: 443
-          CidrIp: 0.0.0.0/0
+          CidrIp: !Ref RemoteAccessCIDR
   ChainlinkNodeELB:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
@@ -744,10 +819,38 @@ Resources:
     Properties:
       LoadBalancerArn: !Ref ChainlinkNodeELB
       Certificates: 
-        - CertificateArn: !Ref SSLCertificate
+        - CertificateArn: !Ref SSLCertificateARN
       DefaultActions:
         - Type: 'forward'
           TargetGroupArn: !Ref ChainlinkNodeTargetGroup
       Port: 443
       Protocol: 'HTTPS'
       SslPolicy: 'ELBSecurityPolicy-2016-08'
+  ChainlinkLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: ChainlinkLogs
+      RetentionInDays: 7
+  ChainlinkNodeInitLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: ChainlinkNodeInitLogGroup
+      RetentionInDays: 7
+  # DBSecret:
+  #   Type: 'AWS::SecretsManager::Secret'
+  #   Properties:
+  #     Name: DBSecret
+  #     Description: Secret password for PostgreSQL database.
+  #     SecretString: !Sub '{"psqlPwd":"${DBMasterUserPassword}"'
+  # ApiSecret:
+  #   Type: 'AWS::SecretsManager::Secret'
+  #   Properties:
+  #     Name: ApiSecret
+  #     Description: Secret password for Chainlink node GUI
+  #     SecretString: !Sub '{"apiPwd":"${ChainlinkNodeGUIPassword}"'
+  # WalletSecret:
+  #   Type: 'AWS::SecretsManager::Secret'
+  #   Properties:
+  #     Name: WalletSecret
+  #     Description: Secret password for Chainlink node wallet password
+  #     SecretString: !Sub '{"walletPwd":"${NodeWalletPassword}"'

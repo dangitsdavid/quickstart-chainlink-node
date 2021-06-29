@@ -1,0 +1,153 @@
+-----------------------------------------------------------------------------
+Region: us-east-1
+StackName: tCaT-quickstart-chainlink-node-default-f93bf4eda9d845c5b04675e329465eb1
+*****************************************************************************
+ResourceStatusReason:  
+Stack launch was successful
+*****************************************************************************
+*****************************************************************************
+Events:  
+TimeStamp                         ResourceStatus      ResourceType                               LogicalResourceId                                                        ResourceStatusReason
+--------------------------------  ------------------  -----------------------------------------  -----------------------------------------------------------------------  ---------------------------
+2021-06-29 00:51:10.098000+00:00  CREATE_COMPLETE     AWS::CloudFormation::Stack                 tCaT-quickstart-chainlink-node-default-f93bf4eda9d845c5b04675e329465eb1
+2021-06-29 00:51:07.808000+00:00  CREATE_COMPLETE     AWS::AutoScaling::AutoScalingGroup         ChainlinkNodeAutoScalingGroup
+2021-06-29 00:50:15.371000+00:00  CREATE_IN_PROGRESS  AWS::AutoScaling::AutoScalingGroup         ChainlinkNodeAutoScalingGroup                                            Resource creation Initiated
+2021-06-29 00:50:14.593000+00:00  CREATE_IN_PROGRESS  AWS::AutoScaling::AutoScalingGroup         ChainlinkNodeAutoScalingGroup
+2021-06-29 00:50:09.363000+00:00  CREATE_COMPLETE     AWS::AutoScaling::LaunchConfiguration      ChainlinkNodeLaunchConfiguration
+2021-06-29 00:50:08.993000+00:00  CREATE_IN_PROGRESS  AWS::AutoScaling::LaunchConfiguration      ChainlinkNodeLaunchConfiguration                                         Resource creation Initiated
+2021-06-29 00:50:08.341000+00:00  CREATE_IN_PROGRESS  AWS::AutoScaling::LaunchConfiguration      ChainlinkNodeLaunchConfiguration
+2021-06-29 00:50:02.355000+00:00  CREATE_COMPLETE     AWS::CloudFormation::Stack                 AuroraStack
+2021-06-29 00:31:15.949000+00:00  CREATE_COMPLETE     AWS::CloudFormation::Stack                 BastionStack
+2021-06-29 00:27:38.273000+00:00  CREATE_COMPLETE     AWS::ElasticLoadBalancingV2::Listener      HTTPListener
+2021-06-29 00:27:37.944000+00:00  CREATE_IN_PROGRESS  AWS::ElasticLoadBalancingV2::Listener      HTTPListener                                                             Resource creation Initiated
+2021-06-29 00:27:37.897000+00:00  CREATE_COMPLETE     AWS::ElasticLoadBalancingV2::Listener      HTTPSListener
+2021-06-29 00:27:37.581000+00:00  CREATE_IN_PROGRESS  AWS::ElasticLoadBalancingV2::Listener      HTTPSListener                                                            Resource creation Initiated
+2021-06-29 00:27:35.781000+00:00  CREATE_IN_PROGRESS  AWS::ElasticLoadBalancingV2::Listener      HTTPListener
+2021-06-29 00:27:35.386000+00:00  CREATE_IN_PROGRESS  AWS::ElasticLoadBalancingV2::Listener      HTTPSListener
+2021-06-29 00:27:31.777000+00:00  CREATE_COMPLETE     AWS::ElasticLoadBalancingV2::LoadBalancer  ChainlinkNodeELB
+2021-06-29 00:25:30.013000+00:00  CREATE_IN_PROGRESS  AWS::ElasticLoadBalancingV2::LoadBalancer  ChainlinkNodeELB                                                         Resource creation Initiated
+2021-06-29 00:25:28.860000+00:00  CREATE_IN_PROGRESS  AWS::ElasticLoadBalancingV2::LoadBalancer  ChainlinkNodeELB
+2021-06-29 00:25:25.810000+00:00  CREATE_COMPLETE     AWS::EC2::SecurityGroup                    ChainlinkNodeSecurityGroup
+2021-06-29 00:25:25.316000+00:00  CREATE_COMPLETE     AWS::EC2::SecurityGroup                    ELBSecurityGroup
+2021-06-29 00:25:24.534000+00:00  CREATE_IN_PROGRESS  AWS::EC2::SecurityGroup                    ChainlinkNodeSecurityGroup                                               Resource creation Initiated
+2021-06-29 00:25:24.255000+00:00  CREATE_IN_PROGRESS  AWS::EC2::SecurityGroup                    ELBSecurityGroup                                                         Resource creation Initiated
+2021-06-29 00:25:21.526000+00:00  CREATE_COMPLETE     AWS::ElasticLoadBalancingV2::TargetGroup   ChainlinkNodeTargetGroup
+2021-06-29 00:25:21.161000+00:00  CREATE_IN_PROGRESS  AWS::ElasticLoadBalancingV2::TargetGroup   ChainlinkNodeTargetGroup                                                 Resource creation Initiated
+2021-06-29 00:25:20.690000+00:00  CREATE_IN_PROGRESS  AWS::CloudFormation::Stack                 AuroraStack                                                              Resource creation Initiated
+2021-06-29 00:25:20.236000+00:00  CREATE_IN_PROGRESS  AWS::ElasticLoadBalancingV2::TargetGroup   ChainlinkNodeTargetGroup
+2021-06-29 00:25:20.187000+00:00  CREATE_IN_PROGRESS  AWS::CloudFormation::Stack                 BastionStack                                                             Resource creation Initiated
+2021-06-29 00:25:19.831000+00:00  CREATE_IN_PROGRESS  AWS::CloudFormation::Stack                 AuroraStack
+2021-06-29 00:25:19.762000+00:00  CREATE_IN_PROGRESS  AWS::EC2::SecurityGroup                    ChainlinkNodeSecurityGroup
+2021-06-29 00:25:19.466000+00:00  CREATE_IN_PROGRESS  AWS::EC2::SecurityGroup                    ELBSecurityGroup
+2021-06-29 00:25:19.202000+00:00  CREATE_IN_PROGRESS  AWS::CloudFormation::Stack                 BastionStack
+2021-06-29 00:25:15.625000+00:00  CREATE_COMPLETE     AWS::CloudFormation::Stack                 VPCStack
+2021-06-29 00:23:30.226000+00:00  CREATE_COMPLETE     AWS::IAM::InstanceProfile                  ChainlinkNodeInstanceProfile
+2021-06-29 00:21:29.706000+00:00  CREATE_IN_PROGRESS  AWS::IAM::InstanceProfile                  ChainlinkNodeInstanceProfile                                             Resource creation Initiated
+2021-06-29 00:21:29.369000+00:00  CREATE_IN_PROGRESS  AWS::IAM::InstanceProfile                  ChainlinkNodeInstanceProfile
+2021-06-29 00:21:25.593000+00:00  CREATE_COMPLETE     AWS::IAM::Role                             ChainlinkNodeRole
+2021-06-29 00:21:14.687000+00:00  CREATE_COMPLETE     AWS::Logs::LogGroup                        ChainlinkLogGroup
+2021-06-29 00:21:14.329000+00:00  CREATE_IN_PROGRESS  AWS::Logs::LogGroup                        ChainlinkLogGroup                                                        Resource creation Initiated
+2021-06-29 00:21:13.848000+00:00  CREATE_COMPLETE     AWS::Logs::LogGroup                        ChainlinkNodeInitLogGroup
+2021-06-29 00:21:13.411000+00:00  CREATE_IN_PROGRESS  AWS::Logs::LogGroup                        ChainlinkNodeInitLogGroup                                                Resource creation Initiated
+2021-06-29 00:21:12.853000+00:00  CREATE_IN_PROGRESS  AWS::CloudFormation::Stack                 VPCStack                                                                 Resource creation Initiated
+2021-06-29 00:21:12.113000+00:00  CREATE_IN_PROGRESS  AWS::Logs::LogGroup                        ChainlinkLogGroup
+2021-06-29 00:21:11.796000+00:00  CREATE_IN_PROGRESS  AWS::IAM::Role                             ChainlinkNodeRole                                                        Resource creation Initiated
+2021-06-29 00:21:11.764000+00:00  CREATE_IN_PROGRESS  AWS::CloudFormation::Stack                 VPCStack
+2021-06-29 00:21:11.527000+00:00  CREATE_IN_PROGRESS  AWS::Logs::LogGroup                        ChainlinkNodeInitLogGroup
+2021-06-29 00:21:11.450000+00:00  CREATE_IN_PROGRESS  AWS::IAM::Role                             ChainlinkNodeRole
+2021-06-29 00:21:04.079000+00:00  CREATE_IN_PROGRESS  AWS::CloudFormation::Stack                 tCaT-quickstart-chainlink-node-default-f93bf4eda9d845c5b04675e329465eb1  User Initiated
+*****************************************************************************
+-----------------------------------------------------------------------------
+Tested on: Monday, 28. June 2021 05:51PM
+-----------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+Region: us-east-1
+StackName: tCaT-quickstart-chainlink-node-default-f93bf4eda9d845c5b04675e329465eb1-VPCStack-1JJ9FHO9JOIJU
+*****************************************************************************
+ResourceStatusReason:  
+Stack launch was successful
+*****************************************************************************
+*****************************************************************************
+Events:  
+TimeStamp                         ResourceStatus      ResourceType                           LogicalResourceId                                                                               ResourceStatusReason
+--------------------------------  ------------------  -------------------------------------  ----------------------------------------------------------------------------------------------  ---------------------------
+2021-06-29 00:24:53.468000+00:00  CREATE_COMPLETE     AWS::CloudFormation::Stack             tCaT-quickstart-chainlink-node-default-f93bf4eda9d845c5b04675e329465eb1-VPCStack-1JJ9FHO9JOIJU
+2021-06-29 00:24:47.807000+00:00  CREATE_COMPLETE     AWS::EC2::Route                        PrivateSubnet1ARoute
+2021-06-29 00:24:32.257000+00:00  CREATE_IN_PROGRESS  AWS::EC2::Route                        PrivateSubnet1ARoute                                                                            Resource creation Initiated
+2021-06-29 00:24:31.567000+00:00  CREATE_COMPLETE     AWS::EC2::Route                        PrivateSubnet2ARoute
+2021-06-29 00:24:31.259000+00:00  CREATE_IN_PROGRESS  AWS::EC2::Route                        PrivateSubnet1ARoute
+2021-06-29 00:24:27.180000+00:00  CREATE_COMPLETE     AWS::EC2::NatGateway                   NATGateway1
+2021-06-29 00:24:16.207000+00:00  CREATE_IN_PROGRESS  AWS::EC2::Route                        PrivateSubnet2ARoute                                                                            Resource creation Initiated
+2021-06-29 00:24:15.205000+00:00  CREATE_IN_PROGRESS  AWS::EC2::Route                        PrivateSubnet2ARoute
+2021-06-29 00:24:10.637000+00:00  CREATE_COMPLETE     AWS::EC2::NatGateway                   NATGateway2
+2021-06-29 00:22:24.172000+00:00  CREATE_IN_PROGRESS  AWS::EC2::NatGateway                   NATGateway1                                                                                     Resource creation Initiated
+2021-06-29 00:22:23.237000+00:00  CREATE_IN_PROGRESS  AWS::EC2::NatGateway                   NATGateway1
+2021-06-29 00:22:22.301000+00:00  CREATE_COMPLETE     AWS::EC2::SubnetRouteTableAssociation  PublicSubnet2RouteTableAssociation
+2021-06-29 00:22:22.079000+00:00  CREATE_IN_PROGRESS  AWS::EC2::NatGateway                   NATGateway2                                                                                     Resource creation Initiated
+2021-06-29 00:22:21.494000+00:00  CREATE_COMPLETE     AWS::EC2::SubnetRouteTableAssociation  PublicSubnet1RouteTableAssociation
+2021-06-29 00:22:21.457000+00:00  CREATE_IN_PROGRESS  AWS::EC2::NatGateway                   NATGateway2
+2021-06-29 00:22:20.144000+00:00  CREATE_COMPLETE     AWS::EC2::SubnetRouteTableAssociation  PrivateSubnet2ARouteTableAssociation
+2021-06-29 00:22:20.039000+00:00  CREATE_COMPLETE     AWS::EC2::SubnetRouteTableAssociation  PrivateSubnet1ARouteTableAssociation
+2021-06-29 00:22:19.098000+00:00  CREATE_COMPLETE     AWS::EC2::EIP                          NAT1EIP
+2021-06-29 00:22:18.247000+00:00  CREATE_IN_PROGRESS  AWS::EC2::EIP                          NAT1EIP                                                                                         Resource creation Initiated
+2021-06-29 00:22:17.748000+00:00  CREATE_COMPLETE     AWS::EC2::EIP                          NAT2EIP
+2021-06-29 00:22:17.148000+00:00  CREATE_COMPLETE     AWS::EC2::Route                        PublicSubnetRoute
+2021-06-29 00:22:16.622000+00:00  CREATE_IN_PROGRESS  AWS::EC2::EIP                          NAT2EIP                                                                                         Resource creation Initiated
+2021-06-29 00:22:06.949000+00:00  CREATE_IN_PROGRESS  AWS::EC2::SubnetRouteTableAssociation  PublicSubnet2RouteTableAssociation                                                              Resource creation Initiated
+2021-06-29 00:22:06.078000+00:00  CREATE_IN_PROGRESS  AWS::EC2::SubnetRouteTableAssociation  PublicSubnet1RouteTableAssociation                                                              Resource creation Initiated
+2021-06-29 00:22:05.852000+00:00  CREATE_IN_PROGRESS  AWS::EC2::SubnetRouteTableAssociation  PublicSubnet2RouteTableAssociation
+2021-06-29 00:22:04.824000+00:00  CREATE_IN_PROGRESS  AWS::EC2::SubnetRouteTableAssociation  PrivateSubnet2ARouteTableAssociation                                                            Resource creation Initiated
+2021-06-29 00:22:04.705000+00:00  CREATE_IN_PROGRESS  AWS::EC2::SubnetRouteTableAssociation  PrivateSubnet1ARouteTableAssociation                                                            Resource creation Initiated
+2021-06-29 00:22:04.700000+00:00  CREATE_IN_PROGRESS  AWS::EC2::SubnetRouteTableAssociation  PublicSubnet1RouteTableAssociation
+2021-06-29 00:22:03.886000+00:00  CREATE_IN_PROGRESS  AWS::EC2::SubnetRouteTableAssociation  PrivateSubnet2ARouteTableAssociation
+2021-06-29 00:22:03.500000+00:00  CREATE_IN_PROGRESS  AWS::EC2::SubnetRouteTableAssociation  PrivateSubnet1ARouteTableAssociation
+2021-06-29 00:22:02.631000+00:00  CREATE_IN_PROGRESS  AWS::EC2::EIP                          NAT1EIP
+2021-06-29 00:22:01.753000+00:00  CREATE_IN_PROGRESS  AWS::EC2::Route                        PublicSubnetRoute                                                                               Resource creation Initiated
+2021-06-29 00:22:01.290000+00:00  CREATE_IN_PROGRESS  AWS::EC2::EIP                          NAT2EIP
+2021-06-29 00:22:01.205000+00:00  CREATE_COMPLETE     AWS::EC2::Subnet                       PublicSubnet2
+2021-06-29 00:22:01.142000+00:00  CREATE_IN_PROGRESS  AWS::EC2::Route                        PublicSubnetRoute
+2021-06-29 00:22:00.589000+00:00  CREATE_COMPLETE     AWS::EC2::Subnet                       PublicSubnet1
+2021-06-29 00:21:59.228000+00:00  CREATE_COMPLETE     AWS::EC2::Subnet                       PrivateSubnet2A
+2021-06-29 00:21:58.833000+00:00  CREATE_COMPLETE     AWS::EC2::Subnet                       PrivateSubnet1A
+2021-06-29 00:21:57.775000+00:00  CREATE_COMPLETE     AWS::EC2::VPCGatewayAttachment         VPCGatewayAttachment
+2021-06-29 00:21:49.585000+00:00  CREATE_COMPLETE     AWS::EC2::VPCEndpoint                  S3VPCEndpoint
+2021-06-29 00:21:49.262000+00:00  CREATE_IN_PROGRESS  AWS::EC2::VPCEndpoint                  S3VPCEndpoint                                                                                   Resource creation Initiated
+2021-06-29 00:21:48.583000+00:00  CREATE_IN_PROGRESS  AWS::EC2::VPCEndpoint                  S3VPCEndpoint
+2021-06-29 00:21:44.513000+00:00  CREATE_COMPLETE     AWS::EC2::RouteTable                   PrivateSubnet1ARouteTable
+2021-06-29 00:21:44.438000+00:00  CREATE_IN_PROGRESS  AWS::EC2::Subnet                       PublicSubnet2                                                                                   Resource creation Initiated
+2021-06-29 00:21:44.425000+00:00  CREATE_IN_PROGRESS  AWS::EC2::Subnet                       PublicSubnet1                                                                                   Resource creation Initiated
+2021-06-29 00:21:43.862000+00:00  CREATE_IN_PROGRESS  AWS::EC2::Subnet                       PublicSubnet2
+2021-06-29 00:21:43.857000+00:00  CREATE_IN_PROGRESS  AWS::EC2::Subnet                       PublicSubnet1
+2021-06-29 00:21:43.658000+00:00  CREATE_IN_PROGRESS  AWS::EC2::RouteTable                   PrivateSubnet1ARouteTable                                                                       Resource creation Initiated
+2021-06-29 00:21:43.611000+00:00  CREATE_COMPLETE     AWS::EC2::RouteTable                   PublicSubnetRouteTable
+2021-06-29 00:21:43.607000+00:00  CREATE_COMPLETE     AWS::EC2::RouteTable                   PrivateSubnet2ARouteTable
+2021-06-29 00:21:43.189000+00:00  CREATE_IN_PROGRESS  AWS::EC2::Subnet                       PrivateSubnet2A                                                                                 Resource creation Initiated
+2021-06-29 00:21:43.025000+00:00  CREATE_IN_PROGRESS  AWS::EC2::RouteTable                   PrivateSubnet1ARouteTable
+2021-06-29 00:21:42.809000+00:00  CREATE_IN_PROGRESS  AWS::EC2::RouteTable                   PublicSubnetRouteTable                                                                          Resource creation Initiated
+2021-06-29 00:21:42.679000+00:00  CREATE_IN_PROGRESS  AWS::EC2::Subnet                       PrivateSubnet1A                                                                                 Resource creation Initiated
+2021-06-29 00:21:42.634000+00:00  CREATE_IN_PROGRESS  AWS::EC2::RouteTable                   PrivateSubnet2ARouteTable                                                                       Resource creation Initiated
+2021-06-29 00:21:42.580000+00:00  CREATE_IN_PROGRESS  AWS::EC2::Subnet                       PrivateSubnet2A
+2021-06-29 00:21:42.328000+00:00  CREATE_IN_PROGRESS  AWS::EC2::VPCGatewayAttachment         VPCGatewayAttachment                                                                            Resource creation Initiated
+2021-06-29 00:21:42.317000+00:00  CREATE_IN_PROGRESS  AWS::EC2::RouteTable                   PublicSubnetRouteTable
+2021-06-29 00:21:42.254000+00:00  CREATE_COMPLETE     AWS::EC2::VPCDHCPOptionsAssociation    VPCDHCPOptionsAssociation
+2021-06-29 00:21:42.174000+00:00  CREATE_IN_PROGRESS  AWS::EC2::RouteTable                   PrivateSubnet2ARouteTable
+2021-06-29 00:21:42.150000+00:00  CREATE_IN_PROGRESS  AWS::EC2::Subnet                       PrivateSubnet1A
+2021-06-29 00:21:42.146000+00:00  CREATE_IN_PROGRESS  AWS::EC2::VPCDHCPOptionsAssociation    VPCDHCPOptionsAssociation                                                                       Resource creation Initiated
+2021-06-29 00:21:41.878000+00:00  CREATE_IN_PROGRESS  AWS::EC2::VPCGatewayAttachment         VPCGatewayAttachment
+2021-06-29 00:21:41.683000+00:00  CREATE_IN_PROGRESS  AWS::EC2::VPCDHCPOptionsAssociation    VPCDHCPOptionsAssociation
+2021-06-29 00:21:38.243000+00:00  CREATE_COMPLETE     AWS::EC2::VPC                          VPC
+2021-06-29 00:21:37.794000+00:00  CREATE_COMPLETE     AWS::EC2::InternetGateway              InternetGateway
+2021-06-29 00:21:37.573000+00:00  CREATE_COMPLETE     AWS::EC2::DHCPOptions                  DHCPOptions
+2021-06-29 00:21:21.804000+00:00  CREATE_IN_PROGRESS  AWS::EC2::VPC                          VPC                                                                                             Resource creation Initiated
+2021-06-29 00:21:21.767000+00:00  CREATE_IN_PROGRESS  AWS::EC2::DHCPOptions                  DHCPOptions                                                                                     Resource creation Initiated
+2021-06-29 00:21:21.667000+00:00  CREATE_IN_PROGRESS  AWS::EC2::InternetGateway              InternetGateway                                                                                 Resource creation Initiated
+2021-06-29 00:21:21.302000+00:00  CREATE_IN_PROGRESS  AWS::EC2::VPC                          VPC
+2021-06-29 00:21:21.278000+00:00  CREATE_IN_PROGRESS  AWS::EC2::DHCPOptions                  DHCPOptions
+2021-06-29 00:21:21.277000+00:00  CREATE_IN_PROGRESS  AWS::EC2::InternetGateway              InternetGateway
+2021-06-29 00:21:12.633000+00:00  CREATE_IN_PROGRESS  AWS::CloudFormation::Stack             tCaT-quickstart-chainlink-node-default-f93bf4eda9d845c5b04675e329465eb1-VPCStack-1JJ9FHO9JOIJU  User Initiated
+*****************************************************************************
+-----------------------------------------------------------------------------
+Tested on: Monday, 28. June 2021 05:51PM
+-----------------------------------------------------------------------------
+
