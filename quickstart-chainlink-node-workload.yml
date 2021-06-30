@@ -41,7 +41,7 @@ Metadata:
           - BlockchainNetwork
           - ChainlinkNodeGUIEmail
           - ChainlinkNodeGUIPassword
-          - EthereumNodeUrl
+          - BlockchainNodeUrl
           - NodeWalletPassword
           - SSLCertificateARN
       - Label:
@@ -113,8 +113,8 @@ Metadata:
         default: Chainlink node GUI Email
       ChainlinkNodeGUIPassword:
         default: Chainlink node GUI Password
-      EthereumNodeUrl:
-        default: Ethereum node Websocket Url
+      BlockchainNodeUrl:
+        default: Blockchain node Websocket Url
       NodeWalletPassword:
         default: Chainlink node Wallet Password
       SSLCertificateARN:
@@ -131,7 +131,7 @@ Metadata:
         default: Database in Multi-AZ for high availability
       DBEngineVersion:
         default: Database engine version
-      DBInstanceClass:
+      BlockchainNodeUrlass:
         default: Database instance class
       DBMasterUsername:
         default: Database master username
@@ -326,7 +326,7 @@ Parameters:
     MinLength: '8'
     NoEcho: 'True'
     Type: String
-  EthereumNodeUrl:
+  BlockchainNodeUrl:
     Default: 'wss://ethUrl'
     Description: 'Please provide websocket endpoint for an ETH node'
     MaxLength: '64'
@@ -391,7 +391,7 @@ Parameters:
   DBInstanceClass:
     AllowedValues:
       - db.r5.large
-    Default: db.r5.large
+    Default: db.t3.medium
     Description: 'The compute and memory capacity class of the database instance.'
     Type: String
   DBMasterUsername: 
@@ -541,7 +541,7 @@ Resources:
   #       BlockchainNetwork: !Ref BlockchainNetwork
   #       ChainlinkNodeGUIEmail: !Ref ChainlinkNodeGUIEmail
   #       ChainlinkNodeGUIPassword: !Ref ChainlinkNodeGUIPassword
-  #       EthereumNodeUrl: !Ref EthereumNodeUrl
+  #       BlockchainNodeUrl: !Ref BlockchainNodeUrl
   #       NodeWalletPassword: !Ref NodeWalletPassword
   #       DBMasterUsername: !Ref DBMasterUsername
   #       DBMasterUserPassword: !Ref DBMasterUserPassword
@@ -599,7 +599,7 @@ Resources:
                   01-store-chainnetwork-var:
                     command: !Sub echo 'chainNetwork=${BlockchainNetwork}' >> /etc/environment
                   02-store-blockchainrpc-var:
-                    command: !Sub echo 'ethUrl=${EthereumNodeUrl}' >> /etc/environment
+                    command: !Sub echo 'ethUrl=${BlockchainNodeUrl}' >> /etc/environment
                   03-store-dbuser-var:
                     command: !Sub echo 'psqlUser=${DBMasterUsername}' >> /etc/environment
                   04-store-dbpwd-var:

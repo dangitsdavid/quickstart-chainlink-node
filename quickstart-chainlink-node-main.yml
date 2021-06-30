@@ -42,7 +42,7 @@ Metadata:
           - BlockchainNetwork
           - ChainlinkNodeGUIEmail
           - ChainlinkNodeGUIPassword
-          - EthereumNodeUrl
+          - BlockchainNodeUrl
           - NodeWalletPassword
           - SSLCertificateARN
       - Label:
@@ -116,8 +116,8 @@ Metadata:
         default: Chainlink node GUI Email
       ChainlinkNodeGUIPassword:
         default: Chainlink node GUI Password
-      EthereumNodeUrl:
-        default: Ethereum node Websocket Url
+      BlockchainNodeUrl:
+        default: Blockchain node Websocket Url
       NodeWalletPassword:
         default: Chainlink node Wallet Password
       SSLCertificateARN:
@@ -348,7 +348,7 @@ Parameters:
     MinLength: '8'
     NoEcho: 'True'
     Type: String
-  EthereumNodeUrl:
+  BlockchainNodeUrl:
     Default: 'wss://ethUrl'
     Description: 'Please provide websocket endpoint for an ETH node'
     MaxLength: '128'
@@ -624,7 +624,7 @@ Resources:
   #       BlockchainNetwork: !Ref BlockchainNetwork
   #       ChainlinkNodeGUIEmail: !Ref ChainlinkNodeGUIEmail
   #       ChainlinkNodeGUIPassword: !Ref ChainlinkNodeGUIPassword
-  #       EthereumNodeUrl: !Ref EthereumNodeUrl
+  #       BlockchainNodeUrl: !Ref BlockchainNodeUrl
   #       NodeWalletPassword: !Ref NodeWalletPassword
   #       DBName: !Ref DBName
   #       DBAutoMinorVersionUpgrade: !Ref DBAutoMinorVersionUpgrade
@@ -689,7 +689,7 @@ Resources:
                   01-store-chainnetwork-var:
                     command: !Sub echo 'chainNetwork=${BlockchainNetwork}' >> /etc/environment
                   02-store-blockchainrpc-var:
-                    command: !Sub echo 'ethUrl=${EthereumNodeUrl}' >> /etc/environment
+                    command: !Sub echo 'ethUrl=${BlockchainNodeUrl}' >> /etc/environment
                   03-store-dbuser-var:
                     command: !Sub echo 'psqlUser=${DBMasterUsername}' >> /etc/environment
                   04-store-dbpwd-var:
@@ -743,7 +743,7 @@ Resources:
                   07-run-chainlink-docker:
                     command: |
                       latestimage=$(curl -s -S "https://registry.hub.docker.com/v2/repositories/smartcontract/chainlink/tags/" | jq -r '."results"[]["name"]' | head -n 1)
-                        cd /home/ec2-user/.chainlink && docker run \
+                      cd /home/ec2-user/.chainlink && docker run \
                         --log-driver=awslogs \
                         --log-opt awslogs-group=ChainlinkLogs \
                         --restart unless-stopped \
