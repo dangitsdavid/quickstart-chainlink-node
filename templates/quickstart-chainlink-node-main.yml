@@ -113,7 +113,7 @@ Metadata:
       NodeWalletPassword:
         default: Chainlink node Wallet Password
       SSLCertificateARN:
-        default: SSL certificate ARN from AWS Certificate Manager
+        default: SSL certificate ARN
       DBName:
         default: Database name
       DBAutoMinorVersionUpgrade:

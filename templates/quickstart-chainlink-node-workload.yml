@@ -313,7 +313,7 @@ Parameters:
     NoEcho: 'True'
     Type: String
   SSLCertificateARN:
-    Description: 'ARN for the Certificate'
+    Description: 'ARN for the certificate created through AWS Certificate Manager'
     AllowedPattern: '.+'
     Default: 'arn:aws:acm:region:certificate'
     Type: String
@@ -448,9 +448,9 @@ Resources:
         NumBastionHosts: !Ref NumBastionHosts
         PublicSubnet1ID: !Ref PublicSubnet1ID
         PublicSubnet2ID: !Ref PublicSubnet2ID
-        # QSS3BucketRegion: !Ref QSS3BucketRegion
-        # QSS3BucketName: !Ref QSS3BucketName
-        # QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}submodules/quickstart-linux-bastion/
+        QSS3BucketRegion: !Ref QSS3BucketRegion
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
         RemoteAccessCIDR: !Ref RemoteAccessCIDR
         VPCID: !Ref VPCID
   AuroraStack:
@@ -506,3 +506,6 @@ Resources:
         DBPort: !Ref DBPort
         DBHostname: !GetAtt AuroraStack.Outputs.RDSEndPointAddress
         SSLCertificateARN: !Ref SSLCertificateARN
+        QSS3BucketRegion: !Ref QSS3BucketRegion
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix

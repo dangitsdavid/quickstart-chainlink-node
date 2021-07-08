@@ -75,7 +75,7 @@ Metadata:
       NodeWalletPassword:
         default: Chainlink Node Wallet Password
       SSLCertificateARN:
-        default: SSL certificate ARN
+        default: ARN for the certificate created through AWS Certificate Manager
       DBName:
         default: Database name
       DBMasterUsername:
@@ -186,7 +186,7 @@ Parameters:
     NoEcho: 'True'
     Type: String
   SSLCertificateARN:
-    Description: 'ARN for the Certificate'
+    Description: 'ARN for the SSL Certificate'
     Type: String
   DBName: 
     Description: 'Name of the Amazon Aurora database.'
