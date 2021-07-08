@@ -1,0 +1,21 @@
+-----------------------------------------------------------------------------
+Region: us-east-1
+StackName: tCaT-quickstart-chainlink-node-default-59a336abeecc469fb980bd8138bef163
+*****************************************************************************
+ResourceStatusReason:  
+The following resource(s) failed to create: [VPCStack].
+*****************************************************************************
+*****************************************************************************
+Events:  
+TimeStamp                         ResourceStatus      ResourceType                LogicalResourceId                                                        ResourceStatusReason
+--------------------------------  ------------------  --------------------------  -----------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+2021-07-07 23:36:29.167000+00:00  CREATE_FAILED       AWS::CloudFormation::Stack  tCaT-quickstart-chainlink-node-default-59a336abeecc469fb980bd8138bef163  The following resource(s) failed to create: [VPCStack].
+2021-07-07 23:36:28.379000+00:00  CREATE_FAILED       AWS::CloudFormation::Stack  VPCStack                                                                 S3 error: The specified key does not exist.
+                                                                                                                                                           For more information check http://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html
+2021-07-07 23:36:27.652000+00:00  CREATE_IN_PROGRESS  AWS::CloudFormation::Stack  VPCStack
+2021-07-07 23:36:21.078000+00:00  CREATE_IN_PROGRESS  AWS::CloudFormation::Stack  tCaT-quickstart-chainlink-node-default-59a336abeecc469fb980bd8138bef163  User Initiated
+*****************************************************************************
+-----------------------------------------------------------------------------
+Tested on: Wednesday, 07. July 2021 04:37PM
+-----------------------------------------------------------------------------
+

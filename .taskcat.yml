@@ -5,7 +5,7 @@ project:
   # - us-west-1
 tests:
   default:
-    template: ./quickstart-chainlink-node-master.yml
+    template: ./templates/quickstart-chainlink-node-main.yml
     parameters:
       AvailabilityZones: $[taskcat_genaz_2]
       KeyPairName: quickstart-staging
