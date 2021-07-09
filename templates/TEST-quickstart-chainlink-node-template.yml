@@ -282,36 +282,36 @@ Resources:
             - install-chainlink-docker
         common-init:
           commands:
-            01-store-chainnetwork-var:
-              command: !Sub 
-                echo 'chainNetwork=${BlockchainNetwork}' >> /etc/environment
-            02-store-blockchainrpc-var:
-              command: !Sub 
-                echo 'ethUrl=${BlockchainNodeUrl}' >> /etc/environment
-            03-store-dbuser-var:
-              command: !Sub 
-                echo 'psqlUser=${DBMasterUsername}' >> /etc/environment
-            04-store-dbpwd-var:
-              command: !Sub 
-                echo 'psqlPwd=${DBMasterUserPassword}' >> /etc/environment
-            05-store-dbhostname-var:
-              command: !Sub 
-                echo 'psqlHostname=${DBHostname}' >> /etc/environment
-            06-store-dbport-var:
-              command: !Sub 
-                echo 'psqlPort=${DBPort}' >> /etc/environment
-            07-store-dbname-var:
-              command: !Sub 
-                echo 'psqlDb=${DBName}' >> /etc/environment
-            08-store-apiuser-var:
-              command: !Sub 
-                echo 'apiUser=${ChainlinkNodeGUIEmail}' >> /etc/environment
-            09-store-apipwd-var:
-              command: !Sub 
-                echo 'apiPwd=${ChainlinkNodeGUIPassword}' >> /etc/environment
-            10-store-walletpwd-var:
-              command: !Sub 
-                echo 'walletPwd=${NodeWalletPassword}' >> /etc/environment
+            # 01-store-chainnetwork-var:
+            #   command: !Sub 
+            #     echo 'chainNetwork=${BlockchainNetwork}' >> /etc/environment
+            # 02-store-blockchainrpc-var:
+            #   command: !Sub 
+            #     echo 'ethUrl=${BlockchainNodeUrl}' >> /etc/environment
+            # 03-store-dbuser-var:
+            #   command: !Sub 
+            #     echo 'psqlUser=${DBMasterUsername}' >> /etc/environment
+            # 04-store-dbpwd-var:
+            #   command: !Sub 
+            #     echo 'psqlPwd=${DBMasterUserPassword}' >> /etc/environment
+            # 05-store-dbhostname-var:
+            #   command: !Sub 
+            #     echo 'psqlHostname=${DBHostname}' >> /etc/environment
+            # 06-store-dbport-var:
+            #   command: !Sub 
+            #     echo 'psqlPort=${DBPort}' >> /etc/environment
+            # 07-store-dbname-var:
+            #   command: !Sub 
+            #     echo 'psqlDb=${DBName}' >> /etc/environment
+            # 08-store-apiuser-var:
+            #   command: !Sub 
+            #     echo 'apiUser=${ChainlinkNodeGUIEmail}' >> /etc/environment
+            # 09-store-apipwd-var:
+            #   command: !Sub 
+            #     echo 'apiPwd=${ChainlinkNodeGUIPassword}' >> /etc/environment
+            # 10-store-walletpwd-var:
+            #   command: !Sub 
+            #     echo 'walletPwd=${NodeWalletPassword}' >> /etc/environment
             11-create-chainlink-dir:
               command: mkdir /home/ec2-user/.chainlink
         get-scripts:
@@ -348,6 +348,12 @@ Resources:
               authentication: S3AccessCreds
         create-env:
           commands:
+            # 01-dl-script:
+            #   command:
+            #     wget -O test.sh https://raw.githubusercontent.com/dangitsdavid/test/main/test.sh
+            # 02-env-script-permission:
+            #   command:
+            #     chmod +x test.sh
             01-create-env-file:
               command: !Sub
               - |
@@ -409,7 +415,7 @@ Resources:
                 -p /chainlink/.password \
                 -a /chainlink/.api
     Properties:
-      AssociatePublicIpAddress: false
+      AssociatePublicIpAddress: true
       KeyName: !Ref KeyPairName
       ImageId: !Ref ImageId
       IamInstanceProfile: !Ref ChainlinkNodeInstanceProfile
@@ -446,13 +452,13 @@ Resources:
           qs_aws-cfn-bootstrap || qs_err
           # Create cloudwatch log group
           sed -i "s/__LOGGROUP__/${ChainlinkNodeInitLogGroup}/g" cloudwatch_logs.stub
-          # Install cloudwatch - current issue determining linux distribution on Amazon Linux 2 AMI
+          # install cloudwatch - issue of failing to determine linux distribution on Amazon Linux 2 AMI
           echo 'Amazon Linux AMI' > /etc/issue
           qs_cloudwatch_install || qs_err
           # Debug cfn-init logs
           qs_cloudwatch_tracklog /var/log/cfn-init.log
           qs_cloudwatch_tracklog /var/log/cfn-init-cmd.log
-          # Run cfn-init ec2-bootstrap script
+          # cfn-init ec2-bootstrap script
           cfn-init -v --stack ${AWS::StackName} --resource ChainlinkNodeLaunchConfiguration --configsets ec2_bootstrap --region ${AWS::Region}
           cfn_fail
           [ $(qs_status) == 0 ] && cfn_success || cfn_fail
@@ -608,7 +614,7 @@ Resources:
     Properties:
       LogGroupName: ChainlinkNodeInitLogGroup
       RetentionInDays: 7
-
+ 
   DBSecret:
     Type: 'AWS::SecretsManager::Secret'
     Properties:

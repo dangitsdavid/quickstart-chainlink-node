@@ -1,6 +1,14 @@
 #!/bin/bash
 
-case $chainNetwork in
+# 1. chainNetwork
+# 2. ethUrl
+# 3. psqlUser
+# 4. psqlPwd
+# 5. psqlHostname
+# 6. psqlPort
+# 7. psqlDb
+
+case $1 in
   ETH-Mainnet )
     chain=1
     contractAddress=0x514910771af9ca656af840dff83e8264ecf986ca
@@ -43,9 +51,9 @@ JSON_CONSOLE=true
 # Ethereum Mainnet Variables
 MIN_OUTGOING_CONFIRMATIONS=2
 MIN_INCOMING_CONFIRMATIONS=2
-ETH_URL=${ethUrl}
+ETH_URL=$2
 # Database Values
-DATABASE_URL=postgresql://${psqlUser}:${psqlPwd}@${psqlHostname}:${psqlPort}/${psqlDb}
+DATABASE_URL=postgresql://$3:$4@$5:$6/$7
 DATABASE_TIMEOUT=0
 # Settings for HTTPS (enable these or the ones below for http)
 #CHAINLINK_TLS_PORT=6689
@@ -63,11 +71,6 @@ ETH_GAS_BUMP_WEI=7000000000
 ETH_BALANCE_MONITOR_BLOCK_DELAY=3
 ENABLE_BULLETPROOF_TX_MANAGER=true" > /home/ec2-user/.chainlink/.env
 
-echo "${apiUser}
-${apiPwd}" > /home/ec2-user/.chainlink/.api
-
-echo "${walletPwd}" > /home/ec2-user/.chainlink/.password
-
 echo
-echo -e "Created OCR environment variables succesfully"
+echo -e "Created environment variables file"
 echo
