@@ -326,7 +326,7 @@ Parameters:
     Type: String
   BlockchainNodeUrl:
     Default: 'wss://ethUrl'
-    Description: 'Please provide websocket endpoint for an Blockchain node'
+    Description: 'Please provide websocket endpoint for a Blockchain node'
     MaxLength: '128'
     MinLength: '6'
     Type: String
