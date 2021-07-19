@@ -280,6 +280,7 @@ Resources:
             - get-scripts
             - create-env
             - install-chainlink-docker
+            # - init-cleanup
         common-init:
           commands:
             01-store-chainnetwork-var:
@@ -291,9 +292,9 @@ Resources:
             03-store-dbuser-var:
               command: !Sub 
                 echo 'psqlUser=${DBMasterUsername}' >> /etc/environment
-            04-store-dbpwd-var:
-              command: !Sub 
-                echo 'psqlPwd=${DBMasterUserPassword}' >> /etc/environment
+            # 04-store-dbpwd-var:
+            #   command: !Sub 
+            #     echo 'psqlPwd=${DBMasterUserPassword}' >> /etc/environment
             05-store-dbhostname-var:
               command: !Sub 
                 echo 'psqlHostname=${DBHostname}' >> /etc/environment
@@ -306,13 +307,17 @@ Resources:
             08-store-apiuser-var:
               command: !Sub 
                 echo 'apiUser=${ChainlinkNodeGUIEmail}' >> /etc/environment
-            09-store-apipwd-var:
-              command: !Sub 
-                echo 'apiPwd=${ChainlinkNodeGUIPassword}' >> /etc/environment
-            10-store-walletpwd-var:
-              command: !Sub 
-                echo 'walletPwd=${NodeWalletPassword}' >> /etc/environment
-            11-create-chainlink-dir:
+            # 09-store-apipwd-var:
+            #   command: !Sub 
+            #     echo 'apiPwd=${ChainlinkNodeGUIPassword}' >> /etc/environment
+            # 10-store-walletpwd-var:
+            #   command: !Sub 
+            #     echo 'walletPwd=${NodeWalletPassword}' >> /etc/environment
+            11-set-region:
+              command: !Sub
+                - echo 'AWS_DEFAULT_REGION=${MyAWSRegion}' >> /etc/environment
+                - MyAWSRegion: !Ref AWS::Region
+            12-create-chainlink-dir:
               command: mkdir /home/ec2-user/.chainlink
         get-scripts:
           packages:
@@ -395,7 +400,9 @@ Resources:
               command: systemctl start docker
             02-docker-for-ec2-user:
               command: gpasswd -a ec2-user docker
-            03-run-chainlink-docker:
+            03-docker-chainlink-pull:
+              command: docker pull smartcontract/chainlink:0.9.10
+            04-run-chainlink-docker:
               command: |
                 latestimage=$(curl -s -S "https://registry.hub.docker.com/v2/repositories/smartcontract/chainlink/tags/" | jq -r '."results"[]["name"]' | head -n 1)
                 cd /home/ec2-user/.chainlink && docker run \
@@ -408,6 +415,14 @@ Resources:
                 --env-file=/home/ec2-user/.chainlink/.env  smartcontract/chainlink:$latestimage local n \
                 -p /chainlink/.password \
                 -a /chainlink/.api
+        # init-cleanup:
+        #   commands:
+        #     01-remove-env:
+        #       command: rm -rf /home/ec2-user/.chainlink/.env
+        #     02-remove-api:
+        #       command: rm -rf /home/ec2-user/.chainlink/.api
+        #     03-remove-password:
+        #       command: rm -rf /home/ec2-user/.chainlink/.password
     Properties:
       AssociatePublicIpAddress: false
       KeyName: !Ref KeyPairName
@@ -452,7 +467,7 @@ Resources:
           # Debug cfn-init logs
           qs_cloudwatch_tracklog /var/log/cfn-init.log
           qs_cloudwatch_tracklog /var/log/cfn-init-cmd.log
-          # Run cfn-init ec2-bootstrap script
+          # Run cfn-init ec2-bootstrap scripts
           cfn-init -v --stack ${AWS::StackName} --resource ChainlinkNodeLaunchConfiguration --configsets ec2_bootstrap --region ${AWS::Region}
           cfn_fail
           [ $(qs_status) == 0 ] && cfn_success || cfn_fail
@@ -528,13 +543,17 @@ Resources:
                 Action:
                   - 'ec2:DescribeInstances'
                 Resource: '*'
-              - Resource:
+        - PolicyName: SecretsPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource:
                   - !Ref DBSecret
                   - !Ref ApiSecret
                   - !Ref WalletSecret
-                Effect: "Allow"
-                Action:
-                  - secretsmanager:GetSecretValue
   ELBSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -614,16 +633,16 @@ Resources:
     Properties:
       Name: DBSecret
       Description: Secret password for PostgreSQL database.
-      SecretString: !Sub '{"psqlPwd":"${DBMasterUserPassword}"'
+      SecretString: !Sub ${DBMasterUserPassword}
   ApiSecret:
     Type: 'AWS::SecretsManager::Secret'
     Properties:
       Name: ApiSecret
       Description: Secret password for Chainlink node GUI
-      SecretString: !Sub '{"apiPwd":"${ChainlinkNodeGUIPassword}"'
+      SecretString: !Sub ${ChainlinkNodeGUIPassword}
   WalletSecret:
     Type: 'AWS::SecretsManager::Secret'
     Properties:
       Name: WalletSecret
       Description: Secret password for Chainlink node wallet password
-      SecretString: !Sub '{"walletPwd":"${NodeWalletPassword}"'
+      SecretString: !Sub ${NodeWalletPassword}

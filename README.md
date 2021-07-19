@@ -31,3 +31,50 @@ CIDR blocks, instance types, database instance types, and environment variables,
 1. Create a key pair in your preferred region.
 2. Create a public certificate using Amazon Certificate Manager in your preferred region.
 3. If using an existing VPC, make sure that it contains two public subnets, two private subnets, internet gateway, NAT gateways, and route tables.
+
+## Manually creating env, api, and password files
+
+1. Run create-env.sh to create the environment variables for your Chainlink node
+
+### Blockchain Networks:
+
+- ETH-Mainnet
+- Kovan-ETH-Testnet
+- Rinkeby-ETH-Testnet
+- xDai-Mainnet
+- Heco-Mainnet
+- BSC-Mainnet
+- Matic-Mainnet
+
+```
+./.chainlink/create-env.sh \
+<blockchain network> \
+<ethereum websocket endpoint> \
+<postgresql username> \
+<postgresql password> \
+<postgresql hostname> \
+<postgresql port number> \
+<postgresql database name>
+```
+
+2. Run create-api.sh to create your Chainlink GUI credentials
+
+```
+./.chainlink/create-api.sh \
+<your api email> \
+<your api password>
+```
+
+3. Run create-password.sh to create your Chainlink node keystore password
+
+```
+./.chainlink/create-password.sh \
+<your keystore password>
+```
+
+Password Requirements:
+
+- 3 lowercase characters
+- 3 uppercase characters
+- 3 numbers
+- 3 special characters
