@@ -430,7 +430,7 @@ Resources:
             03-remove-password:
               command: rm -rf /home/ec2-user/.chainlink/.password
             04-set-dir-permission:
-              command: chown ec2-user:ec2-user .chainlink
+              command: chown ec2-user:ec2-user /home/ec2-user/.chainlink
     Properties:
       AssociatePublicIpAddress: false
       KeyName: !Ref KeyPairName
