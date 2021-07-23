@@ -1,4 +1,12 @@
-# Start a Chainlink Node
+## quickstart-chainlink-chainlink-node—Quick Start
+
+For architectural details, step-by-step instructions, and customization options, see the [deployment guide](https://aws-quickstart.github.io/quickstart-chainlink-chainlink-node/).
+
+To post feedback, submit feature ideas, or report bugs, use the **Issues** section of this GitHub repo.
+
+To submit code for this Quick Start, see the [AWS Quick Start Contributor's Kit](https://aws-quickstart.github.io/).
+
+## Start a Chainlink Node
 
 Deploying this Quick Start will create highly available Chainlink nodes using with default parameters and a provided blockchain.
 
@@ -34,7 +42,7 @@ CIDR blocks, instance types, database instance types, and environment variables,
 
 ## Manually creating env, api, and password files
 
-1. Run create-env.sh to create the environment variables for your Chainlink node
+1. Run create-env.sh to create the environment variable file for your Chainlink node
 
 ### Blockchain Networks:
 
@@ -47,34 +55,34 @@ CIDR blocks, instance types, database instance types, and environment variables,
 - Matic-Mainnet
 
 ```
-./.chainlink/create-env.sh \
-<blockchain network> \
-<ethereum websocket endpoint> \
-<postgresql username> \
-<postgresql password> \
-<postgresql hostname> \
-<postgresql port number> \
-<postgresql database name>
+cd $HOME/.chainlink/ && ./create-env.sh \
+${chainNetwork} \
+${ethUrl} \
+${psqlUser} \
+$(aws secretsmanager get-secret-value --secret-id DBSecret --query "SecretString" --output text) \
+${psqlHostname} \
+${psqlPort} \
+${psqlDb}
 ```
 
-2. Run create-api.sh to create your Chainlink GUI credentials
+2. Run create-password.sh to create your Chainlink node keystore password file
 
 ```
-./.chainlink/create-api.sh \
-<your api email> \
-<your api password>
+cd $HOME/.chainlink/ && ./create-password.sh \
+$(aws secretsmanager get-secret-value --secret-id WalletSecret --query "SecretString" --output text)
 ```
 
-3. Run create-password.sh to create your Chainlink node keystore password
+## Running Chainlink node Docker instance
 
 ```
-./.chainlink/create-password.sh \
-<your keystore password>
+latestimage=$(curl -s -S "https://registry.hub.docker.com/v2/repositories/smartcontract/chainlink/tags/" | jq -r '."results"[]["name"]' | head -n 1)
+cd /home/ec2-user/.chainlink && docker run -d \
+--log-driver=awslogs \
+--log-opt awslogs-group=ChainlinkLogs \
+--restart unless-stopped \
+--name chainlink \
+-p 6688:6688 \
+-v /home/ec2-user/.chainlink:/chainlink \
+--env-file=/home/ec2-user/.chainlink/.env  smartcontract/chainlink:$latestimage local n \
+-p /chainlink/.password
 ```
-
-Password Requirements:
-
-- 3 lowercase characters
-- 3 uppercase characters
-- 3 numbers
-- 3 special characters
