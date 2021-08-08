@@ -1,7 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Chainlink Node Quick Start - Infrastructure
 Metadata:
-  LICENSE: MIT License (MIT)
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
@@ -28,6 +27,7 @@ Metadata:
           - ChainlinkNodeGUIPassword
           - BlockchainNodeUrl
           - NodeWalletPassword
+          - UseSSLCertificate
           - SSLCertificateARN
       - Label:
           default: Aurora PostreSQL configuration
@@ -43,7 +43,6 @@ Metadata:
           - EnableAmazonDevOpsGuru
           - AdministratorAccountId
           - EmailAddress
-          - SnsTopicName
       - Label:
           default: AWS Quick Start configuration
         Parameters:
@@ -81,8 +80,10 @@ Metadata:
         default: Ethereum Node Websocket Url
       NodeWalletPassword:
         default: Chainlink Node Wallet Password
+      UseSSLCertificate:
+        default: SSL certificate with AWS Certificate Manager
       SSLCertificateARN:
-        default: ARN for the certificate created through AWS Certificate Manager
+        default: ARN of the certificate created through AWS Certificate Manager
       DBName:
         default: Database name
       DBMasterUsername:
@@ -99,8 +100,6 @@ Metadata:
         Default: AWS Administrator account ID
       EmailAddress:
         Default: Email Address to receive SNS notification
-      SnsTopicName:
-        Default: SNS topic name
       QSS3BucketName:
         default: Quick Start S3 bucket name
       QSS3KeyPrefix:
@@ -200,8 +199,14 @@ Parameters:
     Description: 'Node Wallet password must container 3 capital letters, 3 lowercase letters, 3 numbers, and 3 special characters.'
     NoEcho: 'True'
     Type: String
+  UseSSLCertificate:
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: 'Using public certificate created through AWS Certificate Manager (ACM).'
+    Type: String
   SSLCertificateARN:
-    Description: 'ARN for the SSL Certificate'
+    Description: 'ARN of the SSL Certificate created through AWS Certificate Manager.'
     Type: String
   DBName: 
     Description: 'Name of the Amazon Aurora database.'
@@ -227,15 +232,12 @@ Parameters:
     Type: String
   AdministratorAccountId:
     Type: String
-    Description: AWS Account Id of the administrator account (the account in which StackSets will be created) - AWS DevOps Guru.
+    Description: 'AWS Account Id of the administrator account (the account in which StackSets will be created).'
     MaxLength: 12
     MinLength: 12
   EmailAddress:
-    Description: Email address for SNS subscription  - AWS DevOps Guru.
+    Description: 'Email address for Amazon DevOps Guru SNS subscription.'
     Type: String
-  SnsTopicName:
-    Type: String
-    Description: Name of SNS Topic  - AWS DevOps Guru.
   QSS3BucketName:
     AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
     ConstraintDescription: The Quick Start bucket name can include numbers, lowercase
@@ -253,7 +255,7 @@ Parameters:
     AllowedPattern: ^([0-9a-zA-Z-.]+/)*$
     ConstraintDescription: The Quick Start S3 key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), and forward slashes (/).
-    Default: quickstart-chainlink-node/
+    Default: quickstart-chainlinklabs-chainlink-node/
     Description: S3 key prefix that is used to simulate a directory for your copy of the 
       Quick Start assets. Keep the default prefix unless you are customizing 
       the template. Changing this prefix updates code references to point to 
@@ -274,6 +276,9 @@ Conditions:
   UsingDefaultBucket: !Equals
     - !Ref QSS3BucketName
     - 'aws-quickstart'
+  UsingSSLCertificate: !Equals
+    - !Ref UseSSLCertificate
+    - 'true'
   UsingAmazonDevOpsGuru: !Equals
     - !Ref EnableAmazonDevOpsGuru
     - 'true'
@@ -293,8 +298,10 @@ Resources:
         - Key: Name
           Value: !Sub 'ChainlinkNode-${AWS::Partition}'
           PropagateAtLaunch: true
+      # TargetGroupARNs:
+      #   - !Ref ChainlinkNodeTargetGroup
       TargetGroupARNs:
-        - !Ref ChainlinkNodeTargetGroup
+        - !If [UsingSSLCertificate, !Ref ChainlinkNodeTargetGroup, !Ref AWS::NoValue]
     UpdatePolicy:
       AutoScalingReplacingUpdate:
         WillReplace: true
@@ -305,7 +312,6 @@ Resources:
         S3AccessCreds:
           type: S3
           buckets: quickstart-chainlink-node-test-bucket
-          # buckets: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
           roleName:
             Ref: ChainlinkNodeRole
       AWS::CloudFormation::Init:
@@ -323,7 +329,7 @@ Resources:
                 echo 'chainNetwork=${BlockchainNetwork}' >> /etc/environment
             02-store-blockchainrpc-var:
               command: !Sub 
-                echo 'ethUrl=${BlockchainNodeUrl}' >> /etc/environment
+                echo 'blockchainNodeUrl=${BlockchainNodeUrl}' >> /etc/environment
             03-store-dbuser-var:
               command: !Sub 
                 echo 'psqlUser=${DBMasterUsername}' >> /etc/environment
@@ -366,27 +372,18 @@ Resources:
           files:
             /home/ec2-user/.chainlink/create-env.sh:
               source: https://quickstart-chainlink-node-test-bucket.s3.us-east-1.amazonaws.com/quickstart-chainlink-node/scripts/create-env.sh
-                # - https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}scripts/create-env.sh
-                # - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
-                #   S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
               mode: '000755'
               owner: ec2-user
               group: ec2-user
               authentication: S3AccessCreds
             /home/ec2-user/.chainlink/create-api.sh:
               source: https://quickstart-chainlink-node-test-bucket.s3.us-east-1.amazonaws.com/quickstart-chainlink-node/scripts/create-api.sh
-                # - https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}scripts/create-env.sh
-                # - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
-                #   S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
               mode: '000755'
               owner: ec2-user
               group: ec2-user
               authentication: S3AccessCreds
             /home/ec2-user/.chainlink/create-password.sh:
               source: https://quickstart-chainlink-node-test-bucket.s3.us-east-1.amazonaws.com/quickstart-chainlink-node/scripts/create-password.sh
-                # - https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}scripts/create-env.sh
-                # - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
-                #   S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
               mode: '000755'
               owner: ec2-user
               group: ec2-user
@@ -544,7 +541,6 @@ Resources:
                Effect: Allow
                Action:
                  - 's3:GetObject'
-              #  Resource: !Sub 'arn:aws:s3:::${BucketName}/${KeyPrefix}*'
                Resource: arn:aws:s3:::quickstart-chainlink-node-test-bucket/*
   ChainlinkNodeRole:
     Type: AWS::IAM::Role
@@ -598,8 +594,10 @@ Resources:
                   - !Ref DBSecret
                   - !Ref ApiSecret
                   - !Ref WalletSecret
+
   ELBSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
+    Condition: UsingSSLCertificate
     Properties:
       GroupDescription: 'Security Group to allow inbound https traffic and http to https redirected traffic'
       VpcId: !Ref VPCID
@@ -614,6 +612,7 @@ Resources:
           CidrIp: !Ref RemoteAccessCIDR
   ChainlinkNodeELB:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Condition: UsingSSLCertificate
     Properties:
       Name: CLNodeELB
       SecurityGroups: 
@@ -623,6 +622,7 @@ Resources:
         - !Ref PublicSubnet2ID
   ChainlinkNodeTargetGroup:
     Type: 'AWS::ElasticLoadBalancingV2::TargetGroup'
+    Condition: UsingSSLCertificate
     Properties:
       HealthCheckEnabled: true
       HealthCheckIntervalSeconds: 15
@@ -636,6 +636,7 @@ Resources:
       VpcId: !Ref VPCID
   HTTPListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Condition: UsingSSLCertificate
     Properties:
       DefaultActions:
         - Type: 'redirect'
@@ -651,6 +652,7 @@ Resources:
       Protocol: 'HTTP'
   HTTPSListener:
     Type: 'AWS::ElasticLoadBalancingV2::Listener'
+    Condition: UsingSSLCertificate
     Properties:
       LoadBalancerArn: !Ref ChainlinkNodeELB
       Certificates: 
@@ -661,6 +663,7 @@ Resources:
       Port: 443
       Protocol: 'HTTPS'
       SslPolicy: 'ELBSecurityPolicy-2016-08'
+
   ChainlinkLogGroup:
     Type: 'AWS::Logs::LogGroup'
     Properties:
@@ -771,12 +774,5 @@ Resources:
     Properties:
       ResourceCollectionFilter:
         CloudFormation:
-          StackNames:
+          StackNames: 
             - "*"
-  DevOpsGuruNotification:
-    Type: AWS::DevOpsGuru::NotificationChannel
-    Condition: UsingAmazonDevOpsGuru
-    Properties:
-      Config:
-        Sns:
-          TopicArn: !Sub arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${SnsTopicName}

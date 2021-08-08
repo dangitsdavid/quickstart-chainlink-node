@@ -4,7 +4,6 @@ Metadata:
   QuickStartDocumentation:
     EntrypointName: 'Launch into a new VPC'
     Order: '1'
-  LICENSE: MIT License (MIT)
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
@@ -44,6 +43,7 @@ Metadata:
           - ChainlinkNodeGUIPassword
           - BlockchainNodeUrl
           - NodeWalletPassword
+          - UseSSLCertificate
           - SSLCertificateARN
       - Label:
           default: Aurora PostreSQL configuration
@@ -58,12 +58,11 @@ Metadata:
           - DBMasterUserPassword
           - DBPort
       - Label:
-          default: AWS DevOps Guru
+          default: Amazon DevOps Guru
         Parameters:
           - EnableAmazonDevOpsGuru
           - AdministratorAccountId
           - EmailAddress
-          - SnsTopicName
       - Label:
           default: AWS Quick Start configuration
         Parameters:
@@ -119,6 +118,8 @@ Metadata:
         default: Blockchain node Websocket Url
       NodeWalletPassword:
         default: Chainlink node Wallet Password
+      UseSSLCertificate:
+        default: SSL certificate with AWS Certificate Manager
       SSLCertificateARN:
         default: SSL certificate ARN
       DBName:
@@ -145,8 +146,6 @@ Metadata:
         Default: AWS Administrator account ID
       EmailAddress:
         Default: Email Address to receive SNS notification
-      SnsTopicName:
-        Default: SNS topic name
       QSS3BucketName:
         default: Quick Start S3 bucket name
       QSS3KeyPrefix:
@@ -351,10 +350,17 @@ Parameters:
     MinLength: '9'
     NoEcho: 'True'
     Type: String
+  UseSSLCertificate:
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Default: 'false'
+    Description: 'Use a public certificate created through AWS Certificate Manager (ACM).'
+    Type: String
   SSLCertificateARN:
-    Description: 'ARN for the certificate created through AWS Certificate Manager'
+    Description: 'ARN of the SSL Certificate created through AWS Certificate Manager.'
     AllowedPattern: '.+'
-    Default: 'arn:aws:acm:region:certificate'
+    Default: 'arn:aws:acm:region:account-id:certificate'
     Type: String
   DBName: 
     AllowedPattern: '[a-zA-Z0-9]*'
@@ -435,18 +441,14 @@ Parameters:
     Type: String
   AdministratorAccountId:
     Type: String
-    Description: AWS Account Id of the administrator account (the account in which StackSets will be created) - AWS DevOps Guru.
+    Description: 'AWS Account Id of the administrator account (the account in which StackSets will be created).'
     MaxLength: 12
     MinLength: 12
-    Default: '123456789000'
+    Default: '000000000000'
   EmailAddress:
-    Description: Email address for SNS subscription  - AWS DevOps Guru.
+    Description: 'Email address for Amazon DevOps Guru SNS subscription.'
     Type: String
-    Default: user@email.com
-  SnsTopicName:
-    Type: String
-    Description: Name of SNS Topic  - AWS DevOps Guru.
-    Default: 'AWS DevOps Guru - Chainlink Node QuickStart'
+    Default: chainlinkuser@email.com
   QSS3BucketName:
     AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
     ConstraintDescription: The Quick Start bucket name can include numbers, lowercase
@@ -464,7 +466,7 @@ Parameters:
     AllowedPattern: ^([0-9a-zA-Z-.]+/)*$
     ConstraintDescription: The Quick Start S3 key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), and forward slashes (/).
-    Default: quickstart-chainlink-node/
+    Default: quickstart-chainlinklabs-chainlink-node/
     Description: S3 key prefix that is used to simulate a directory for your copy of the 
       Quick Start assets. Keep the default prefix unless you are customizing 
       the template. Changing this prefix updates code references to point to 
@@ -491,7 +493,6 @@ Resources:
     Properties:
       TemplateURL: 
         !Sub
-          # - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}submodules/quickstart-aws-vpc/templates/aws-vpc.template.yaml'
           - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/quickstart-aws-vpc/templates/aws-vpc.template.yaml'
           - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
             S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
@@ -511,7 +512,6 @@ Resources:
     Properties:
       TemplateURL:
         !Sub
-          # - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/quickstart-chainlink-node-workload.yml'
           - 'https://quickstart-chainlink-node-test-bucket.s3.us-east-1.amazonaws.com/quickstart-chainlink-node/templates/quickstart-chainlink-node-workload.yml'
           - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
             S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
@@ -567,11 +567,11 @@ Resources:
         BastionBanner: !Ref BastionBanner
         EnableTCPForwarding: !Ref EnableTCPForwarding
         EnableX11Forwarding: !Ref EnableX11Forwarding
+        UseSSLCertificate: !Ref UseSSLCertificate
         SSLCertificateARN: !Ref SSLCertificateARN
         EnableAmazonDevOpsGuru: !Ref EnableAmazonDevOpsGuru
         AdministratorAccountId: !Ref AdministratorAccountId
         EmailAddress: !Ref EmailAddress
-        SnsTopicName: !Ref SnsTopicName
         QSS3BucketRegion: !Ref QSS3BucketRegion
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Ref QSS3KeyPrefix
