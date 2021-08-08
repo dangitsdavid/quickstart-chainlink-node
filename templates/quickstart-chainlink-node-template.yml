@@ -452,7 +452,6 @@ Resources:
                 --env-file=/home/ec2-user/.chainlink/.env  smartcontract/chainlink:$latestimage local n \
                 -p /chainlink/.password \
                 -a /chainlink/.api
-              ignoreErrors: true
         init-cleanup:
           commands:
             01-remove-env:
