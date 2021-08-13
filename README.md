@@ -5,7 +5,7 @@ Deploying this Quick Start will create highly available Chainlink nodes using wi
 ## Prerequisite
 
 1. Create a key pair in your preferred region.
-2. Create a public certificate using Amazon Certificate Manager in your preferred region.
+2. If using a domain and SSL certificate to access your Chainlink node web GUI, create a public certificate using Amazon Certificate Manager in your preferred region.
 3. If using an existing VPC, make sure that it contains two public subnets, two private subnets, internet gateway, NAT gateways, and route tables.
 
 ## Manually creating env, api, and password files
@@ -33,7 +33,7 @@ $(aws secretsmanager get-secret-value --secret-id WalletSecret --query "SecretSt
 3. Run create-api.sh to create your Chainlink node API file
 
 ```
-cd $HOME/.chainlink/ && ./create-password.sh \
+cd $HOME/.chainlink/ && ./create-api.sh \
 ${apiUser} \
 $(aws secretsmanager get-secret-value --secret-id ApiSecret --query "SecretString" --output text)
 ```
