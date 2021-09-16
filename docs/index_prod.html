@@ -840,33 +840,26 @@ p.footer-text a{color:#d7d8d8}
 <ul class="sectlevel2">
 <li><a href="#_confirm_your_aws_account_configuration">Confirm your AWS account configuration</a></li>
 <li><a href="#_launch_the_quick_start">Launch the Quick Start</a></li>
-<li><a href="#_login_to_your_chainlink_node">Login to your Chainlink node</a></li>
 </ul>
 </li>
 <li><a href="#_post_deployment_steps">Post-deployment steps</a>
 <ul class="sectlevel2">
 <li><a href="#_access_your_chainlink_node">Access your Chainlink node</a></li>
-<li><a href="#_working_with_your_chainlink_node">Working with your Chainlink node</a></li>
-<li><a href="#_recoverupgrade_your_chainlink_node_container">Recover/Upgrade your Chainlink node container</a></li>
+<li><a href="#_fulfilling_requests_with_the_chainlink_node">Fulfilling requests with the Chainlink node</a></li>
+<li><a href="#_working_with_external_adapters">Working with external adapters</a></li>
+<li><a href="#_manually_creating_your_env_password_and_api_files_for_chainlink_node_instances">Manually creating your .env, .password, and .api files for Chainlink node instances</a></li>
+<li><a href="#_docker_run_command_to_start_chainlink_node_instances">Docker run command to start Chainlink node instances</a></li>
 </ul>
 </li>
 <li><a href="#_best_practices_for_using_chainlink_node_on_aws">Best practices for using Chainlink node on AWS</a>
 <ul class="sectlevel2">
 <li><a href="#_failover_capabilities">Failover Capabilities</a></li>
-<li><a href="#_backup_and_restore">Backup and Restore</a></li>
 <li><a href="#_disaster_recovery">Disaster Recovery</a></li>
 <li><a href="#_active_monitoring">Active Monitoring</a></li>
 </ul>
 </li>
-<li><a href="#_security">Security</a>
-<ul class="sectlevel2">
-<li><a href="#_remove_sensitive_data">Remove sensitive data</a></li>
-<li><a href="#_do_not_run_as_the_root_user">Do not run as the root user</a></li>
-<li><a href="#_protect_your_aws_account">Protect your AWS account</a></li>
-</ul>
-</li>
+<li><a href="#_security">Security</a></li>
 <li><a href="#_faq">FAQ</a></li>
-<li><a href="#_troubleshooting">Troubleshooting</a></li>
 <li><a href="#_customer_responsibility">Customer responsibility</a></li>
 <li><a href="#_parameter_reference">Parameter reference</a></li>
 <li><a href="#_send_us_feedback">Send us feedback</a></li>
@@ -887,9 +880,8 @@ p.footer-text a{color:#d7d8d8}
 </div>
 </div>
 <div class="paragraph text-center">
-<p><strong>September 2021</strong><br>
-<em>Vijay Krishnan, AWS PSA</em><br>
-<em>Troy Ameigh PSA, Intergration and Automation Team</em></p>
+<p><strong>August 2021</strong><br>
+<em>AWS Quick Start team</em></p>
 </div>
 <div class="admonitionblock tip text-left">
 <table>
@@ -977,7 +969,7 @@ After you deploy the Quick Start, create <a href="https://docs.aws.amazon.com/aw
 <h2 id="_software_licenses">Software licenses</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>A Docker license may be required depending on the use of Chainlink node and other factors, see Docker&#8217;s <a href="https://www.docker.com/pricing">pricing page</a> and their <a href="https://www.docker.com/pricing/faq">FAQ</a>. All AWS service resources consumed during the launch of the Quick Start incur AWS service usage costs.</p>
+<p>No licenses are required to deploy this Quick Start. All AWS service resources consumed during the launch of the Quick Start incur AWS service usage costs.</p>
 </div>
 </div>
 </div>
@@ -1342,23 +1334,20 @@ If you’re deploying Chainlink node into an existing VPC, make sure that your V
 <li>
 <p>On the <strong>Specify stack details</strong> page, change the stack name if needed. Review the parameters for the template. Provide values for the parameters that require input. For all other parameters, review the default settings and customize them as necessary. For details on each parameter, see the <a href="#_parameter_reference">Parameter reference</a> section of this guide. When you finish reviewing and customizing the parameters, choose <strong>Next</strong>.</p>
 </li>
-</ol>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_login_to_your_chainlink_node">Login to your Chainlink node</h3>
-<div class="olist arabic">
-<ol class="arabic">
 <li>
-<p>Locate your private key file. The key used to launch</p>
-<div class="paragraph">
-<p>+
-. On the <strong>Configure stack options</strong> page, you can <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-resource-tags.html" target="_blank" rel="noopener">specify tags</a> (key-value pairs) for resources in your stack and <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-add-tags.html" target="_blank" rel="noopener">set advanced options</a>. When you’re finished, choose <strong>Next</strong>.
-. On the <strong>Review</strong> page, review and confirm the template settings. Under <strong>Capabilities</strong>, select the two check boxes to acknowledge that the template creates IAM resources and might require the ability to automatically expand macros.
-. Choose <strong>Create stack</strong> to deploy the stack.
-. Monitor the status of the stack. When the status is <strong>CREATE_COMPLETE</strong>, the Chainlink node deployment is ready.
-. To view the created resources, see the values displayed in the <strong>Outputs</strong> tab for the stack.</p>
-</div>
+<p>On the <strong>Configure stack options</strong> page, you can <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-resource-tags.html" target="_blank" rel="noopener">specify tags</a> (key-value pairs) for resources in your stack and <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-add-tags.html" target="_blank" rel="noopener">set advanced options</a>. When you’re finished, choose <strong>Next</strong>.</p>
+</li>
+<li>
+<p>On the <strong>Review</strong> page, review and confirm the template settings. Under <strong>Capabilities</strong>, select the two check boxes to acknowledge that the template creates IAM resources and might require the ability to automatically expand macros.</p>
+</li>
+<li>
+<p>Choose <strong>Create stack</strong> to deploy the stack.</p>
+</li>
+<li>
+<p>Monitor the status of the stack. When the status is <strong>CREATE_COMPLETE</strong>, the Chainlink node deployment is ready.</p>
+</li>
+<li>
+<p>To view the created resources, see the values displayed in the <strong>Outputs</strong> tab for the stack.</p>
 </li>
 </ol>
 </div>
@@ -1392,27 +1381,24 @@ ssh ec2-user@&lt;chainlink_node_internal_ip&gt; -L 6688:localhost:6688</pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_working_with_your_chainlink_node">Working with your Chainlink node</h3>
-<div class="paragraph">
-<p><strong>Fulfilling requests</strong></p>
-</div>
+<h3 id="_fulfilling_requests_with_the_chainlink_node">Fulfilling requests with the Chainlink node</h3>
 <div class="paragraph">
 <p>Once the quickstart is deployed, your Chainlink node is ready to interact with smart contracts and <a href="https://docs.chain.link/docs/fulfilling-requests/">fulfill requests</a>.</p>
 </div>
-<div class="paragraph">
-<p><strong>Working with external adapters</strong></p>
 </div>
+<div class="sect2">
+<h3 id="_working_with_external_adapters">Working with external adapters</h3>
 <div class="paragraph">
 <p>External adapters are how Chainlink enables easy integration of custom computations and specialized APIs. External adapters are services which the core of the Chainlink node communicates via its API with a simple JSON specification. To get started, visit our <a href="https://docs.chain.link/docs/external-adapters/">external adapters documentation</a>.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_recoverupgrade_your_chainlink_node_container">Recover/Upgrade your Chainlink node container</h3>
+<h3 id="_manually_creating_your_env_password_and_api_files_for_chainlink_node_instances">Manually creating your .env, .password, and .api files for Chainlink node instances</h3>
 <div class="paragraph">
-<p>When the Chainlink node containers are stopped or if you need to start up a new instance during an upgrade or recovery, then new .env, .password, and .api files will need to be created to start the Chainlink node.</p>
+<p>If the Chainlink node instances are stopped, then new .env, .password, and .api files will need to be created to start the Chainlink node.</p>
 </div>
 <div class="paragraph">
-<p><strong>Generating the .env file</strong></p>
+<p><strong>Generating the .env file:</strong></p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -1427,7 +1413,7 @@ ${psqlDb}</pre>
 </div>
 </div>
 <div class="paragraph">
-<p><strong>Generating the .password file</strong></p>
+<p><strong>Generating the .password file:</strong></p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -1436,7 +1422,7 @@ $(aws secretsmanager get-secret-value --secret-id WalletSecret --query "SecretSt
 </div>
 </div>
 <div class="paragraph">
-<p><strong>Generating the .api file</strong></p>
+<p><strong>Generating the .api file:</strong></p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -1445,31 +1431,11 @@ ${apiUser} \
 $(aws secretsmanager get-secret-value --secret-id ApiSecret --query "SecretString" --output text)</pre>
 </div>
 </div>
+</div>
+<div class="sect2">
+<h3 id="_docker_run_command_to_start_chainlink_node_instances">Docker run command to start Chainlink node instances</h3>
 <div class="paragraph">
-<p><strong>Stopping and removing the existing Chainlink node container (required if updating container to a newer release)</strong></p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>docker stop chainlink &amp;&amp; docker rm chainlink</pre>
-</div>
-</div>
-<div class="paragraph">
-<p><strong>Docker run command to start Chainlink node container</strong></p>
-</div>
-<div class="admonitionblock warning">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-warning" title="Warning"></i>
-</td>
-<td class="content">
-Running the Chainlink node does not require the root user. It is recommended to keep the default user or run as a non-root user for your operations.
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>To deploy the latest image of Chainlink node container:</p>
+<p>To manually run the latest image of Chainlink node docker instance:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -1486,12 +1452,6 @@ cd /home/ec2-user/.chainlink &amp;&amp; docker run -d \
 -a /chainlink/.api</pre>
 </div>
 </div>
-<div class="paragraph">
-<p>You can find more details with maintenance and examples at <a href="https://docs.chain.link/docs/performing-system-maintenance/">Performing System Maintenance</a>.</p>
-</div>
-<div class="paragraph">
-<p>In addition, visit the <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/install-updates.html">User Guide for Linux Instances</a> to keep your Amazon Linux instance software up to date.</p>
-</div>
 </div>
 </div>
 </div>
@@ -1501,53 +1461,7 @@ cd /home/ec2-user/.chainlink &amp;&amp; docker run -d \
 <div class="sect2">
 <h3 id="_failover_capabilities">Failover Capabilities</h3>
 <div class="paragraph">
-<p>To ensure there is very minimal downtime, failover capabilities are required on both the Chainlink node and Ethereum clients so that if any one server fails, the service is still online. The Amazon EC2 Auto Scaling group provisions two Chainlink nodes:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>One primary Chainlink node</p>
-</li>
-<li>
-<p>One standby Chainlink node</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>The failover happens automatically if the primary Chainlink node is unhealthy.</p>
-</div>
-<div class="paragraph">
-<p>The deployment will provision resources throughout two Availability Zones. When one Availability Zone becomes unhealthy or unavailable, the Amazon EC2 Auto Scaling group will launch a new instance of the Chainlink node or bastion host in the unaffected Availability Zone.</p>
-</div>
-<div class="paragraph">
-<p>The PostgreSQL database is crucial as the data from both the Chainlink and Ethereum clients are stored in the database. The Aurora database cluster is fault tolerant by design and can tolerate a failure of an Availability Zone without any loss of data. There may only a brief interruption of service.</p>
-</div>
-<div class="paragraph">
-<p>See a failover node example at <a href="https://docs.chain.link/docs/performing-system-maintenance/">Performing System Maintenance</a>.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_backup_and_restore">Backup and Restore</h3>
-<div class="paragraph">
-<p><strong>Database Backup</strong></p>
-</div>
-<div class="paragraph">
-<p>The PostgreSQL database is crucial as it stores most of the Chainlink node data. Aurora automatically backs up your PostgreSQL cluster during the backup window with a default backup retention of 7 days. It is possible to modify the database cluster&#8217;s backup retention period from 1 day up to 35 days. For more details, see <a href="https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Aurora.Managing.Backups.html">User Guide for Aurora</a>.</p>
-</div>
-<div class="paragraph">
-<p>If the primary instance in your PostgreSQL cluster fails, Aurora will automatically fail over to an existing Read Replica or create a new primary instance if there are no Read Replicas available.</p>
-</div>
-<div class="paragraph">
-<p><strong>EC2 Instance Backup</strong></p>
-</div>
-<div class="paragraph">
-<p>By default, the Chainlink node does not contain any crucial data aside from logs found in the Chainlink directory. If the primary Chainlink node instance is marked as unhealthy, the Auto Scaling Group will schedule for a replacement instance while the standby Chainlink node instance will automatically fail over.</p>
-</div>
-<div class="paragraph">
-<p>You can backup the EBS volumes attached to the Chainlink node as described in <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSSnapshots.html">User Guide for Linux Instances</a>. The <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html">Amazon Data Lifecycle Manager</a> can help to automate your EBS snapshots. To create a backup of the entire EC2 instance, you must create an AMI from the instance.</p>
-</div>
-<div class="paragraph">
-<p>Visit <a href="https://docs.aws.amazon.com/prescriptive-guidance/latest/backup-recovery/restore.html">Backup and recovery approaches on AWS</a> for details on restoring from an Amazon EBS snapshot or an AMI.</p>
+<p>To ensure there is very minimal downtime, failover capabilities are required on both the Chainlink and Ethereum clients so that if any one server fails, the service is still online. The Amazon EC2 Auto Scaling group has two Chainlink nodes: one active Chainlink node and one standby Chainlink node. Data from both the Chainlink and Ethereum clients are stored in a PostgreSQL database which needs to be highly available.</p>
 </div>
 </div>
 <div class="sect2">
@@ -1605,23 +1519,8 @@ cd /home/ec2-user/.chainlink &amp;&amp; docker run -d \
 <div class="sect1">
 <h2 id="_security">Security</h2>
 <div class="sectionbody">
-<div class="sect2">
-<h3 id="_remove_sensitive_data">Remove sensitive data</h3>
 <div class="paragraph">
-<p>The Chainlink node docker instance requires the .env, .password, and .api file that contains plaintext passwords. It is recommended to remove the .env, .password, and .api files once the Chainlink node instance is running to prevent potential exposure of sensitive passwords. In addition,</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_do_not_run_as_the_root_user">Do not run as the root user</h3>
-<div class="paragraph">
-<p>The operations on the Chainlink node do not require the root user so it is recommended to use the default user or run as a non-root user.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_protect_your_aws_account">Protect your AWS account</h3>
-<div class="paragraph">
-<p><a href="https://aws.amazon.com/blogs/security/guidelines-for-protecting-your-aws-account-while-using-programmatic-access/" class="bare">https://aws.amazon.com/blogs/security/guidelines-for-protecting-your-aws-account-while-using-programmatic-access/</a></p>
-</div>
+<p>The Chainlink node docker instance requires the .env, .password, and .api file that contains plaintext passwords. It is recommended to remove the .env, .password, and .api files once the Chainlink node instance is running to prevent potential exposure of sensitive passwords.</p>
 </div>
 </div>
 </div>
@@ -1690,27 +1589,6 @@ ${psqlHostname} \
 ${psqlPort} \
 ${psqlDb}</pre>
 </div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_troubleshooting">Troubleshooting</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>How do I access the Chainlink node internal logs?</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>You can access the initialization logs of the EC2 instances at the Log Group <code>ChainlinkNodeInitLogGroup</code> through CloudWatch. There are two streams of logs: /var/log/cfn-init-cmd.log and /var/log/cfn-init.log. The cfn-init-cmd will show all the commands that were ran and cfn-init will show general logging during the initialization of the EC2 instance.</p>
-</li>
-<li>
-<p>You can access logs from the Chainlink node at the Log Group <code>ChainlinkLogs</code> through CloudWatch. By default, the Chainlink node instances have debug log level. This can be changed through the Chainlink node web GUI.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>&lt;insert picture&gt;</p>
 </div>
 </div>
 </div>

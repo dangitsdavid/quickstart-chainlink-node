@@ -13,20 +13,16 @@ ssh ec2-user@<bastion_host_public_ip> -A -L 6688:localhost:6688
 ssh ec2-user@<chainlink_node_internal_ip> -L 6688:localhost:6688
 ....
 
-=== Working with your Chainlink node
-
-*Fulfilling requests*
-
+=== Fulfilling requests with the Chainlink node
 Once the quickstart is deployed, your Chainlink node is ready to interact with smart contracts and https://docs.chain.link/docs/fulfilling-requests/[fulfill requests].
 
-*Working with external adapters*
-
+=== Working with external adapters
 External adapters are how Chainlink enables easy integration of custom computations and specialized APIs. External adapters are services which the core of the Chainlink node communicates via its API with a simple JSON specification. To get started, visit our https://docs.chain.link/docs/external-adapters/[external adapters documentation].
 
-=== Recover/Upgrade your Chainlink node container
-When the Chainlink node containers are stopped or if you need to start up a new instance during an upgrade or recovery, then new .env, .password, and .api files will need to be created to start the Chainlink node. 
+=== Manually creating your .env, .password, and .api files for Chainlink node instances
+If the Chainlink node instances are stopped, then new .env, .password, and .api files will need to be created to start the Chainlink node.
 
-*Generating the .env file*
+*Generating the .env file:*
 ....
 cd /home/ec2-user/.chainlink/ && ./create-env.sh \
 ${chainNetwork} \
@@ -38,29 +34,21 @@ ${psqlPort} \
 ${psqlDb}
 ....
 
-*Generating the .password file*
+*Generating the .password file:*
 ....
 cd /home/ec2-user/.chainlink/ && ./create-password.sh \
 $(aws secretsmanager get-secret-value --secret-id WalletSecret --query "SecretString" --output text)
 ....
 
-*Generating the .api file*
+*Generating the .api file:*
 ....
 cd /home/ec2-user/.chainlink/ && ./create-api.sh \
 ${apiUser} \
 $(aws secretsmanager get-secret-value --secret-id ApiSecret --query "SecretString" --output text)
 ....
 
-*Stopping and removing the existing Chainlink node container (required if updating container to a newer release)*
-....
-docker stop chainlink && docker rm chainlink
-....
-
-*Docker run command to start Chainlink node container*
-
-WARNING: Running the Chainlink node does not require the root user. It is recommended to keep the default user or run as a non-root user for your operations.
-
-To deploy the latest image of Chainlink node container:
+=== Docker run command to start Chainlink node instances
+To manually run the latest image of Chainlink node docker instance:
 
 ....
 latestimage=$(curl -s -S "https://registry.hub.docker.com/v2/repositories/smartcontract/chainlink/tags/" | jq -r '."results"[]["name"]' | head -n 1)
@@ -76,43 +64,10 @@ cd /home/ec2-user/.chainlink && docker run -d \
 -a /chainlink/.api
 ....
 
-You can find more details with maintenance and examples at https://docs.chain.link/docs/performing-system-maintenance/[Performing System Maintenance].
-
-In addition, visit the https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/install-updates.html[User Guide for Linux Instances] to keep your Amazon Linux instance software up to date.
-
 == Best practices for using {partner-product-short-name} on AWS
 
 === Failover Capabilities
-
-To ensure there is very minimal downtime, failover capabilities are required on both the Chainlink node and Ethereum clients so that if any one server fails, the service is still online. The Amazon EC2 Auto Scaling group provisions two Chainlink nodes: 
-
-- One primary Chainlink node 
-- One standby Chainlink node
-
-The failover happens automatically if the primary Chainlink node is unhealthy.
-
-The deployment will provision resources throughout two Availability Zones. When one Availability Zone becomes unhealthy or unavailable, the Amazon EC2 Auto Scaling group will launch a new instance of the Chainlink node or bastion host in the unaffected Availability Zone. 
-
-The PostgreSQL database is crucial as the data from both the Chainlink and Ethereum clients are stored in the database. The Aurora database cluster is fault tolerant by design and can tolerate a failure of an Availability Zone without any loss of data. There may only a brief interruption of service. 
-
-See a failover node example at https://docs.chain.link/docs/performing-system-maintenance/[Performing System Maintenance].
-
-
-=== Backup and Restore
-
-*Database Backup*
-
-The PostgreSQL database is crucial as it stores most of the Chainlink node data. Aurora automatically backs up your PostgreSQL cluster during the backup window with a default backup retention of 7 days. It is possible to modify the database cluster's backup retention period from 1 day up to 35 days. For more details, see https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Aurora.Managing.Backups.html[User Guide for Aurora].
-
-If the primary instance in your PostgreSQL cluster fails, Aurora will automatically fail over to an existing Read Replica or create a new primary instance if there are no Read Replicas available.
-
-*EC2 Instance Backup*
-
-By default, the Chainlink node does not contain any crucial data aside from logs found in the Chainlink directory. If the primary Chainlink node instance is marked as unhealthy, the Auto Scaling Group will schedule for a replacement instance while the standby Chainlink node instance will automatically fail over.
-
-You can backup the EBS volumes attached to the Chainlink node as described in https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSSnapshots.html[User Guide for Linux Instances]. The https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/snapshot-lifecycle.html[Amazon Data Lifecycle Manager] can help to automate your EBS snapshots. To create a backup of the entire EC2 instance, you must create an AMI from the instance.
-
-Visit https://docs.aws.amazon.com/prescriptive-guidance/latest/backup-recovery/restore.html[Backup and recovery approaches on AWS] for details on restoring from an Amazon EBS snapshot or an AMI.
+To ensure there is very minimal downtime, failover capabilities are required on both the Chainlink and Ethereum clients so that if any one server fails, the service is still online. The Amazon EC2 Auto Scaling group has two Chainlink nodes: one active Chainlink node and one standby Chainlink node. Data from both the Chainlink and Ethereum clients are stored in a PostgreSQL database which needs to be highly available.
 
 === Disaster Recovery
 Problems occur and when they do, the right processes need to be in-place to ensure that as little downtime as possible occurs. The main impediment to incurring large amounts of downtime in the context of Chainlink node operators is a fully corrupted Ethereum node that requires a re-sync.
@@ -138,14 +93,5 @@ Monitoring of the Chainlink nodes are available through Amazon CloudWatch.
 
 == Security
 
-=== Remove sensitive data
+The Chainlink node docker instance requires the .env, .password, and .api file that contains plaintext passwords. It is recommended to remove the .env, .password, and .api files once the Chainlink node instance is running to prevent potential exposure of sensitive passwords.
 
-The Chainlink node docker instance requires the .env, .password, and .api file that contains plaintext passwords. It is recommended to remove the .env, .password, and .api files once the Chainlink node instance is running to prevent potential exposure of sensitive passwords. In addition, 
-
-=== Do not run as the root user
-
-The operations on the Chainlink node do not require the root user so it is recommended to use the default user or run as a non-root user.
-
-=== Protect your AWS account
-
-https://aws.amazon.com/blogs/security/guidelines-for-protecting-your-aws-account-while-using-programmatic-access/

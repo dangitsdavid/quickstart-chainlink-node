@@ -42,14 +42,3 @@ ${psqlHostname} \
 ${psqlPort} \
 ${psqlDb}
 ....
-
-== Troubleshooting
-
-How do I access the Chainlink node internal logs?
-
-* You can access the initialization logs of the EC2 instances at the Log Group `ChainlinkNodeInitLogGroup` through CloudWatch. There are two streams of logs: /var/log/cfn-init-cmd.log and /var/log/cfn-init.log. The cfn-init-cmd will show all the commands that were ran and cfn-init will show general logging during the initialization of the EC2 instance.
-
-* You can access logs from the Chainlink node at the Log Group `ChainlinkLogs` through CloudWatch. By default, the Chainlink node instances have debug log level. This can be changed through the Chainlink node web GUI.
-
-<insert picture>
-
