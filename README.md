@@ -1,3 +1,7 @@
+# :exclamation: NO LONGER MAINTAINED - PLEASE SEE PUBLIC RELEASE BELOW
+- [Chainlink Node on AWS Quick Start](https://aws.amazon.com/quickstart/architecture/chainlink-node/)
+- [Chainlink Node AWS Quick Start Github Repository](https://github.com/aws-quickstart/quickstart-chainlinklabs-chainlink-node)
+
 ## Start a Chainlink Node
 
 Deploying this Quick Start will create highly available Chainlink nodes using with default parameters and a provided blockchain.
